@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form-start";
-import { useMutation } from "@tanstack/react-query";
-
+import useCreateComment from "@/hooks/useCreateComment";
+import useUpdateComment from "@/hooks/useUpdateComment";
 import { pb } from "@/lib/pocketbase";
 
 interface AnimeCommentFormProps {
@@ -13,37 +13,20 @@ interface FormData {
   review: string;
 }
 
-interface CommentData {
-  author: string;
-  anime: string;
-  content?: string;
-}
-
 function AnimeCommentForm({
   animeId,
   commentId,
   review,
 }: AnimeCommentFormProps) {
-  const { user } = useAuth();
+  const user = pb.authStore.record;
 
   const defaultData: FormData = { review };
   const form = useForm({
     defaultValues: defaultData,
   });
 
-  const createCommentMutation = useMutation({
-    mutationFn: async (data: CommentData) => {
-      return await pb.collection("comments").create(data);
-    },
-  });
-
-  const updateCommentMutation = useMutation({
-    mutationFn: async (review: string) => {
-      return await pb.collection("comments").update(commentId, {
-        content: review,
-      });
-    },
-  });
+  const createCommentMutation = useCreateComment();
+  const updateCommentMutation = useUpdateComment(commentId);
 
   return (
     <form.Field
@@ -51,7 +34,6 @@ function AnimeCommentForm({
       listeners={{
         onChangeDebounceMs: 500, // 500ms debounce
         onChange: ({ value }) => {
-          console.log(`new review: ${value}`);
           if (commentId) {
             updateCommentMutation.mutate(value);
           } else {

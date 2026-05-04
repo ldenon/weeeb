@@ -1,46 +1,40 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-
+import useGenres from "@/hooks/useGenres";
 import { pb } from "@/lib/pocketbase";
+
+function SidebarItem({ name }: { name: string }) {
+  return (
+    <div className="w-full text-sm text-left px-4 border-l-2 rounded-r-md bg-bg border-t-highlight hover:bg-gradient-hover p-2 text-text border-border-muted">
+      {name}
+    </div>
+  );
+}
 
 export default function Sidebar() {
   const user = pb.authStore.record;
 
-  const { data: genres, isLoading } = useQuery({
-    queryKey: ["genres"],
-    queryFn: () => pb.collection("genres").getFullList(),
-  });
-
+  const { data: genres, isLoading } = useGenres();
   return (
     <div className="md:py-6 flex flex-col">
       <a href="/">
         <h1 className="text-white text-xl text-center py-3 mb-4 select-none">
-          weeeb.app
+          weeeb
         </h1>
       </a>
       <div className="hidden md:flex flex-col px-8 mt-12">
         <h3 className="text-[#bdccd8] mb-4">Pages</h3>
-        <Link
-          to="/"
-          className="w-full text-sm text-left px-4 border-l-2 rounded-r-md bg-bg border-t-highlight hover:bg-gradient-hover p-2 text-text border-border-muted"
-        >
-          Accueil
+        <Link to="/">
+          <SidebarItem name="Accueil" />
         </Link>
         {user && (
-          <Link
-            to="/"
-            className="w-full text-sm text-left px-4 border-l-2 rounded-r-md bg-bg border-t-highlight hover:bg-gradient-hover p-2 text-text border-border-muted"
-          >
-            Ma liste
+          <Link to="/">
+            <SidebarItem name="Ma liste" />
           </Link>
         )}
         {user && (
-          <a
-            href="/anime/add"
-            className="w-full text-sm text-left px-4 border-l-2 rounded-r-md bg-bg border-t-highlight hover:bg-gradient-hover p-2 text-text border-border-muted"
-          >
-            Ajouter un anime
-          </a>
+          <Link to="/anime/add">
+            <SidebarItem name="Ajouter un anime" />
+          </Link>
         )}
       </div>
       <div className="hidden md:flex flex-col px-8 mt-12">
@@ -49,9 +43,8 @@ export default function Sidebar() {
         <Link
           to="/genres/$genre"
           params={(prev) => ({ ...prev, genre: "all" })}
-          className="w-full text-sm text-left px-4 border-l-2 rounded-r-md bg-bg border-t-highlight hover:bg-gradient-hover p-2 text-text border-border-muted"
         >
-          Tous
+          <SidebarItem name="Tous" />
         </Link>
         {!isLoading &&
           genres?.map((record) => (
@@ -62,9 +55,8 @@ export default function Sidebar() {
                 genre: record.name.replaceAll(" ", "").toLowerCase(),
               })}
               key={record.id}
-              className="w-full text-sm text-left px-4 border-l-2 rounded-r-md bg-bg border-t-highlight hover:bg-gradient-hover p-2 text-text border-border-muted"
             >
-              {record.name}
+              <SidebarItem name={record.name} />
             </Link>
           ))}
       </div>

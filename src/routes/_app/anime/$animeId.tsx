@@ -1,56 +1,27 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 import AnimeComment from "@/components/AnimeComment";
 import AnimeCommentForm from "@/components/AnimeCommentForm";
 import AnimeSearchBar from "@/components/AnimeSearchBar";
 import WatchlistActionButtons from "@/components/WatchlistActionButtons";
-
+import useAnime from "@/hooks/useAnime";
+import useComments from "@/hooks/useComments";
+import useRelatedUsers from "@/hooks/useRelatedUsers";
 import { pb } from "@/lib/pocketbase";
 import { statusTranslations } from "@/utils/anime";
 
 export const Route = createFileRoute("/_app/anime/$animeId")({
   component: RouteComponent,
-  loader: async ({ params }) => {
-    const animeId = params.animeId;
-
-    if (animeId.trim().length === 0) throw notFound();
-
-    const anime = await pb
-      .collection("animes")
-      .getOne(animeId, {
-        expand: "genres",
-      })
-      .catch(() => {
-        throw notFound();
-      });
-
-    return anime;
-  },
 });
 
 function RouteComponent() {
-  const anime = Route.useLoaderData();
+  const user = pb.authStore.record;
+  const { animeId } = Route.useParams();
 
-  const { user } = useAuth();
-
-  const { data: comments } = useQuery({
-    queryKey: ["comments"],
-    queryFn: () =>
-      pb.collection("comments").getFullList({
-        filter: `anime.id = "${anime.id}"`,
-        expand: "author",
-      }),
-  });
-
-  const { data: relatedUsers } = useQuery({
-    queryKey: ["relatedUsers", anime.id],
-    queryFn: () =>
-      pb.collection("watchlists").getFullList({
-        filter: `anime = "${anime.id}"`,
-        expand: "user",
-      }),
-  });
+  const { data: anime, isLoading: isAnimeLoading } = useAnime(animeId);
+  const { data: comments, isLoading: areCommentsLoading } =
+    useComments(animeId);
+  const { data: relatedUsers } = useRelatedUsers(animeId);
 
   const userWatchlistEntry = useMemo(() => {
     if (!user || !relatedUsers) return null;
@@ -61,14 +32,18 @@ function RouteComponent() {
   const userComment = comments?.find((c) => c.author === user?.id);
 
   return (
-    <div className="mt-4 md:mt-16 hideOnSearch">
+    <div className="mt-4 ">
       <AnimeSearchBar />
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3">
         <h1 className="text-xl text-text my-4 col-span-full">{anime?.name}</h1>
         <div className="w-1/2 md:w-full">
-          <img className="rounded-md w-full" src={anime.img} alt="Grand Blue" />
-          {user && (
+          <img
+            className="rounded-md w-full"
+            src={anime?.img}
+            alt="Grand Blue"
+          />
+          {!isAnimeLoading && (
             <WatchlistActionButtons
               key={userWatchlistEntry?.id || "new"} // Le 'key' force le composant à se recréer si l'entrée change
               currentStatus={
@@ -78,7 +53,7 @@ function RouteComponent() {
                     ]?.fr
                   : "Ajouter à "
               }
-              animeId={anime.id}
+              animeId={animeId}
             />
           )}
         </div>
@@ -100,7 +75,7 @@ function RouteComponent() {
           </div>
           <span className="text-text-muted font-semibold mt-4">Genre</span>
           <p className="text-lg text-text-muted col-span-full font-light">
-            {anime.expand?.genres.map(
+            {anime?.expand?.genres.map(
               ({ name }: { name: string }, i: number) => {
                 // Remove comma for the first element
                 if (i === 0) return name;
@@ -119,46 +94,44 @@ function RouteComponent() {
       </div>
 
       <div className="col-span-full grid grid-cols-2 lg:grid-cols-3 gap-3 mt-8">
-        {user &&
-          relatedUsers?.map((w) => {
-            const style =
-              "text-sm px-4 py-2 flex items-center bg-bg shadow-shadow hover:bg-gradient-hover border-1 rounded-full " +
-              (w.isMasterclass
-                ? "text-secondary border-secondary"
-                : "border-t-highlight border-border-muted text-text");
-            return (
-              <div key={w.id} className={style}>
-                <span className="capitalize mr-1">{w.expand?.user?.name}</span>
-                {`(${statusTranslations[
-                  w.status as keyof typeof statusTranslations
-                ].fr.toLowerCase()})`}
-              </div>
-            );
-          })}
+        {relatedUsers?.map((w) => {
+          const style =
+            "text-sm px-4 py-2 flex items-center bg-bg shadow-shadow hover:bg-gradient-hover border-1 rounded-full " +
+            (w.isMasterclass
+              ? "text-secondary border-secondary"
+              : "border-t-highlight border-border-muted text-text");
+          return (
+            <div key={w.id} className={style}>
+              <span className="capitalize mr-1">{w.expand?.user?.name}</span>
+              {`(${statusTranslations[
+                w.status as keyof typeof statusTranslations
+              ].fr.toLowerCase()})`}
+            </div>
+          );
+        })}
       </div>
 
       <div className="flex-col flex-wrap mt-8">
-        {user && userWatchlistEntry ? (
+        {userWatchlistEntry && (
           <AnimeCommentForm
-            animeId={anime.id}
+            animeId={animeId}
             commentId={userComment?.id ?? ""}
             review={userComment?.content ?? ""}
           />
-        ) : (
-          <> </>
         )}
 
-        {comments?.map((comment) => {
-          if (comment.author === user?.id) return <></>;
+        {!areCommentsLoading &&
+          comments?.map((comment) => {
+            if (comment.author === user?.id) return null;
 
-          return (
-            <AnimeComment
-              key={comment.id}
-              author={comment.expand?.author.name}
-              text={comment.content}
-            />
-          );
-        })}
+            return (
+              <AnimeComment
+                key={comment.id}
+                author={comment.expand?.author.name}
+                text={comment.content}
+              />
+            );
+          })}
       </div>
     </div>
   );

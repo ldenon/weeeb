@@ -18,7 +18,7 @@ export default function WatchlistActionButtons({
   const [buttonText, setButtonText] = useState(currentStatus);
   const [expanded, setExpanded] = useState(false);
 
-  const { user } = useAuth();
+  const user = pb.authStore.record;
 
   const statusMutation = useMutation({
     mutationFn: async (newStatus: string) => {

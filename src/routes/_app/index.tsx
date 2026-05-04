@@ -1,8 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import AnimeSearchBar from "@/components/AnimeSearchBar";
 import AnimeThumbnail from "@/components/AnimeThumbnail";
-
+import useWatchlistAnimes from "@/hooks/useWatchlistAnimes";
 import { pb } from "@/lib/pocketbase";
 
 export const Route = createFileRoute("/_app/")({ component: App });
@@ -10,13 +9,7 @@ export const Route = createFileRoute("/_app/")({ component: App });
 function App() {
   const user = pb.authStore.record;
 
-  const { data: animes } = useQuery({
-    queryKey: ["homeAnimes", user],
-    queryFn: () =>
-      pb
-        .collection("watchlists")
-        .getFullList({ expand: "anime", filter: `user = "${user?.id}"` }),
-  });
+  const { data: animes } = useWatchlistAnimes(user?.id ?? "");
 
   const getAnimesByStatus = (status: string) => {
     return animes ? animes?.filter((el) => el.status === status) : [];
@@ -36,7 +29,7 @@ function App() {
         <AnimeSearchBar />
       </div>
 
-      <div className="mt-12 hideOnSearch">
+      <div className="mt-12 ">
         <h2 className="text-text text-xl uppercase font-semibold my-4">
           Masterclass
         </h2>
@@ -60,7 +53,7 @@ function App() {
         </div>
       </div>
 
-      <div className="mt-16 hideOnSearch">
+      <div className="mt-16 ">
         <h2 className="text-text text-xl uppercase font-semibold my-4">
           En cours {ongoing.length > 0 ? `(${ongoing.length})` : ""}
         </h2>
@@ -83,7 +76,7 @@ function App() {
         </div>
       </div>
 
-      <div className="mt-16 hideOnSearch">
+      <div className="mt-16 ">
         <h2 className="text-text text-xl uppercase font-semibold my-4">
           Prévu ({planned.length})
         </h2>
@@ -105,7 +98,7 @@ function App() {
         </div>
       </div>
 
-      <div className="mt-16 hideOnSearch">
+      <div className="mt-16 ">
         <h2 className="text-text text-xl uppercase font-semibold my-4">
           Terminé ({completed.length})
         </h2>
@@ -127,7 +120,7 @@ function App() {
         </div>
       </div>
 
-      <div className="mt-16 hideOnSearch">
+      <div className="mt-16 ">
         <h2 className="text-text text-xl uppercase font-semibold my-4">
           Inachevé ({dropped.length})
         </h2>
@@ -151,29 +144,3 @@ function App() {
     </>
   );
 }
-
-// function AnimeSection() {
-//   return <div className="mt-12 hideOnSearch">
-//     <h2 className="text-text text-xl uppercase font-semibold my-4">Masterclass</h2>
-//     <div className="grid sm:grid-cols-2 md:grid-cols-4 grid-cols-2 gap-4">
-//       {
-//         masterclass.length === 0 ? (
-//           <p className="text-text-secondary col-span-full">
-//             Tu n'as aucune masterclass.
-//           </p>
-//         ) : (
-//           masterclass.map(({ expand }) => {
-//             return (
-//               <AnimeThumbnail
-//                 key={expand.anime.id}
-//                 id={expand.anime.id}
-//                 imgUrl={expand.anime.img}
-//                 name={expand.anime.name}
-//               />
-//             );
-//           })
-//         )
-//       }
-//     </div>
-//   </div>
-// }
