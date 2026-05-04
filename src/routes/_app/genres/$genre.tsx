@@ -3,7 +3,7 @@ import AnimeSearchBar from '@/components/AnimeSearchBar';
 import AnimeThumbnail from '@/components/AnimeThumbnail';
 import { pb } from '@/lib/pocketbase'
 
-export const Route = createFileRoute('/genres/$genre')({
+export const Route = createFileRoute('/_app/genres/$genre')({
     component: RouteComponent,
     loader: async ({ params }) => {
         const genre = params.genre;

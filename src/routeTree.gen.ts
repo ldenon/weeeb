@@ -9,104 +9,159 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as GenresGenreRouteImport } from './routes/genres/$genre'
-import { Route as AnimeAddRouteImport } from './routes/anime/add'
-import { Route as AnimeAnimeIdRouteImport } from './routes/anime/$animeId'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteRouteImport } from './routes/_app/route'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppGenresGenreRouteImport } from './routes/_app/genres/$genre'
+import { Route as AppAnimeAddRouteImport } from './routes/_app/anime/add'
+import { Route as AppAnimeAnimeIdRouteImport } from './routes/_app/anime/$animeId'
 
-const IndexRoute = IndexRouteImport.update({
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRouteRoute = AppRouteRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const GenresGenreRoute = GenresGenreRouteImport.update({
+const AppGenresGenreRoute = AppGenresGenreRouteImport.update({
   id: '/genres/$genre',
   path: '/genres/$genre',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AnimeAddRoute = AnimeAddRouteImport.update({
+const AppAnimeAddRoute = AppAnimeAddRouteImport.update({
   id: '/anime/add',
   path: '/anime/add',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AnimeAnimeIdRoute = AnimeAnimeIdRouteImport.update({
+const AppAnimeAnimeIdRoute = AppAnimeAnimeIdRouteImport.update({
   id: '/anime/$animeId',
   path: '/anime/$animeId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/anime/$animeId': typeof AnimeAnimeIdRoute
-  '/anime/add': typeof AnimeAddRoute
-  '/genres/$genre': typeof GenresGenreRoute
+  '/': typeof AppIndexRoute
+  '/login': typeof LoginRoute
+  '/anime/$animeId': typeof AppAnimeAnimeIdRoute
+  '/anime/add': typeof AppAnimeAddRoute
+  '/genres/$genre': typeof AppGenresGenreRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/anime/$animeId': typeof AnimeAnimeIdRoute
-  '/anime/add': typeof AnimeAddRoute
-  '/genres/$genre': typeof GenresGenreRoute
+  '/login': typeof LoginRoute
+  '/': typeof AppIndexRoute
+  '/anime/$animeId': typeof AppAnimeAnimeIdRoute
+  '/anime/add': typeof AppAnimeAddRoute
+  '/genres/$genre': typeof AppGenresGenreRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/anime/$animeId': typeof AnimeAnimeIdRoute
-  '/anime/add': typeof AnimeAddRoute
-  '/genres/$genre': typeof GenresGenreRoute
+  '/_app': typeof AppRouteRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_app/': typeof AppIndexRoute
+  '/_app/anime/$animeId': typeof AppAnimeAnimeIdRoute
+  '/_app/anime/add': typeof AppAnimeAddRoute
+  '/_app/genres/$genre': typeof AppGenresGenreRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/anime/$animeId' | '/anime/add' | '/genres/$genre'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/anime/$animeId'
+    | '/anime/add'
+    | '/genres/$genre'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/anime/$animeId' | '/anime/add' | '/genres/$genre'
-  id: '__root__' | '/' | '/anime/$animeId' | '/anime/add' | '/genres/$genre'
+  to: '/login' | '/' | '/anime/$animeId' | '/anime/add' | '/genres/$genre'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/login'
+    | '/_app/'
+    | '/_app/anime/$animeId'
+    | '/_app/anime/add'
+    | '/_app/genres/$genre'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AnimeAnimeIdRoute: typeof AnimeAnimeIdRoute
-  AnimeAddRoute: typeof AnimeAddRoute
-  GenresGenreRoute: typeof GenresGenreRoute
+  AppRouteRoute: typeof AppRouteRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/': {
+      id: '/_app/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRouteRoute
     }
-    '/genres/$genre': {
-      id: '/genres/$genre'
+    '/_app/genres/$genre': {
+      id: '/_app/genres/$genre'
       path: '/genres/$genre'
       fullPath: '/genres/$genre'
-      preLoaderRoute: typeof GenresGenreRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppGenresGenreRouteImport
+      parentRoute: typeof AppRouteRoute
     }
-    '/anime/add': {
-      id: '/anime/add'
+    '/_app/anime/add': {
+      id: '/_app/anime/add'
       path: '/anime/add'
       fullPath: '/anime/add'
-      preLoaderRoute: typeof AnimeAddRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppAnimeAddRouteImport
+      parentRoute: typeof AppRouteRoute
     }
-    '/anime/$animeId': {
-      id: '/anime/$animeId'
+    '/_app/anime/$animeId': {
+      id: '/_app/anime/$animeId'
       path: '/anime/$animeId'
       fullPath: '/anime/$animeId'
-      preLoaderRoute: typeof AnimeAnimeIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppAnimeAnimeIdRouteImport
+      parentRoute: typeof AppRouteRoute
     }
   }
 }
 
+interface AppRouteRouteChildren {
+  AppIndexRoute: typeof AppIndexRoute
+  AppAnimeAnimeIdRoute: typeof AppAnimeAnimeIdRoute
+  AppAnimeAddRoute: typeof AppAnimeAddRoute
+  AppGenresGenreRoute: typeof AppGenresGenreRoute
+}
+
+const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppIndexRoute: AppIndexRoute,
+  AppAnimeAnimeIdRoute: AppAnimeAnimeIdRoute,
+  AppAnimeAddRoute: AppAnimeAddRoute,
+  AppGenresGenreRoute: AppGenresGenreRoute,
+}
+
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AnimeAnimeIdRoute: AnimeAnimeIdRoute,
-  AnimeAddRoute: AnimeAddRoute,
-  GenresGenreRoute: GenresGenreRoute,
+  AppRouteRoute: AppRouteRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

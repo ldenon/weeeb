@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { ChevronDown } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+
 import { pb } from "@/lib/pocketbase";
 import { statusTranslations } from "@/utils/anime";
 
@@ -25,7 +25,9 @@ export default function WatchlistActionButtons({
       try {
         const watchlist = await pb
           .collection("watchlists")
-          .getFirstListItem(`user.id = "${user?.id}" && anime.id = "${animeId}"`);
+          .getFirstListItem(
+            `user.id = "${user?.id}" && anime.id = "${animeId}"`,
+          );
 
         return await pb.collection("watchlists").update(watchlist.id, {
           status: newStatus,
@@ -41,8 +43,7 @@ export default function WatchlistActionButtons({
     },
     onSuccess: (data) => {
       setButtonText(
-        statusTranslations[data.status as keyof typeof statusTranslations]
-          .fr
+        statusTranslations[data.status as keyof typeof statusTranslations].fr,
       );
     },
   });
@@ -74,7 +75,7 @@ export default function WatchlistActionButtons({
           type="button"
           onClick={() => {
             setExpanded(false);
-            statusMutation.mutate("completed")
+            statusMutation.mutate("completed");
           }}
           className="px-4 py-2 border-b hover:bg-gradient-hover border-border-muted cursor-pointer select-none"
         >
@@ -84,7 +85,7 @@ export default function WatchlistActionButtons({
           type="button"
           onClick={() => {
             setExpanded(false);
-            statusMutation.mutate("ongoing")
+            statusMutation.mutate("ongoing");
           }}
           className="px-4 py-2 border-b hover:bg-gradient-hover border-border-muted cursor-pointer select-none"
         >
@@ -94,7 +95,7 @@ export default function WatchlistActionButtons({
           type="button"
           onClick={() => {
             setExpanded(false);
-            statusMutation.mutate("planned")
+            statusMutation.mutate("planned");
           }}
           className="px-4 py-2 border-b hover:bg-gradient-hover border-border-muted cursor-pointer select-none"
         >
@@ -104,7 +105,7 @@ export default function WatchlistActionButtons({
           type="button"
           onClick={() => {
             setExpanded(false);
-            statusMutation.mutate("dropped")
+            statusMutation.mutate("dropped");
           }}
           className="px-4 py-2 border-b hover:bg-gradient-hover border-border-muted cursor-pointer select-none"
         >

@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import AnimeSearchBar from '@/components/AnimeSearchBar'
 import AnimeSubmitForm from '@/components/AnimeSubmitForm'
 
-export const Route = createFileRoute('/anime/add')({
+export const Route = createFileRoute('/_app/anime/add')({
     component: RouteComponent,
 })
 
