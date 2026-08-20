@@ -116,6 +116,14 @@ func handleSubmitMatch(e *core.RequestEvent) error {
 			return router.NewBadRequestError("Le second anime n'est pas dans ta liste.", err)
 		}
 
+		// The matchmaking never proposes a planned anime, but a handcrafted
+		// request could still submit one, which would rank a title its owner
+		// has not watched.
+		if !IsRankable(entryA.GetString("status")) || !IsRankable(entryB.GetString("status")) {
+			return router.NewBadRequestError(
+				"Un anime que tu prévois de voir ne peut pas être départagé.", nil)
+		}
+
 		ratingA, ratingB := NewRatings(
 			RatingOf(entryA),
 			RatingOf(entryB),

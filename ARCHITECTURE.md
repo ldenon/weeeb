@@ -124,7 +124,11 @@ commentaire **au nom de quelqu'un d'autre**.
 
 ### 2.4 Classement par duels (`internal/elo`)
 
-Chaque anime part à **1000 points** et son classement suit le système **Elo**. Le score
+Seuls les animes commencés sont classés (`completed`, `ongoing`, `dropped`) : un anime
+`planned` n'a pas été vu et ne peut pas être départagé. Le filtre est appliqué dans
+`LoadEntries`, donc classement, appariement et compteurs de progression restent cohérents.
+
+Chaque anime éligible part à **1000 points** et son classement suit le système **Elo**. Le score
 attendu de A face à B se déduit de l'écart de notes — `E(A) = 1 / (1 + 10^((B-A)/400))` —
 puis la note est corrigée de l'écart entre le résultat réel et cette attente :
 `note'(A) = note(A) + K × (résultat(A) - E(A))`, avec `K = 32` et un résultat valant 1, 0,5

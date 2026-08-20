@@ -29,6 +29,24 @@ const (
 	ScaleFactor = 400.0
 )
 
+// RankableStatuses are the watchlist statuses eligible for the ranking.
+//
+// A "planned" anime has not been watched yet, so its owner has no opinion to
+// express about it: it is excluded from both the ranking and the matchmaking.
+// The three remaining statuses all imply the anime was actually started.
+var RankableStatuses = []string{"completed", "ongoing", "dropped"}
+
+// IsRankable reports whether a watchlist status may take part in a duel.
+func IsRankable(status string) bool {
+	for _, rankable := range RankableStatuses {
+		if status == rankable {
+			return true
+		}
+	}
+
+	return false
+}
+
 // Outcome is the result of a duel, from anime A's point of view.
 type Outcome string
 

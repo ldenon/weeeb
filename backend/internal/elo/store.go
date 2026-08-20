@@ -23,7 +23,9 @@ type Entry struct {
 	MatchCount  int    `db:"matchCount" json:"matchCount"`
 }
 
-// LoadEntries returns the user's entire watchlist, with the animes joined in.
+// LoadEntries returns the rankable part of the user's watchlist, with the animes
+// joined in. Planned animes are filtered out here rather than at the call sites,
+// so the ranking, the matchmaking and the progress counters all agree.
 func LoadEntries(app core.App, userId string) ([]Entry, error) {
 	entries := []Entry{}
 
@@ -40,6 +42,7 @@ func LoadEntries(app core.App, userId string) ([]Entry, error) {
 		From("watchlists w").
 		InnerJoin("animes a", dbx.NewExp("a.id = w.anime")).
 		Where(dbx.HashExp{"w.user": userId}).
+		AndWhere(dbx.In("w.status", rankableStatusValues()...)).
 		OrderBy("a.name ASC").
 		Bind(dbx.Params{"defaultElo": DefaultRating}).
 		All(&entries)
@@ -90,6 +93,17 @@ func TotalMatches(app core.App, userId string) (int, error) {
 	}
 
 	return total, nil
+}
+
+// rankableStatusValues adapts RankableStatuses to the variadic any signature
+// that dbx.In expects.
+func rankableStatusValues() []any {
+	values := make([]any, len(RankableStatuses))
+	for i, status := range RankableStatuses {
+		values[i] = status
+	}
+
+	return values
 }
 
 // RatingOf returns the stored rating of a watchlist entry, falling back to the

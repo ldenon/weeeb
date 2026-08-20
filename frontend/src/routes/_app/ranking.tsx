@@ -93,7 +93,8 @@ function RouteComponent() {
 			{!isLoading && !pair && (
 				<div className="mt-16 flex flex-col gap-4">
 					<p className="text-text-secondary">
-						Il faut au moins deux animes dans ta liste pour lancer un duel.
+						Il faut au moins deux animes commencés pour lancer un duel. Les
+						animes que tu prévois de voir n'entrent pas dans le classement.
 					</p>
 					<Link to="/anime/add" className="text-text underline text-sm">
 						Ajouter un anime
@@ -270,7 +271,8 @@ function Ranking({
 	if (entries.length === 0) {
 		return (
 			<p className="text-text-secondary mt-12">
-				Ta liste est vide, il n'y a rien à classer.
+				Aucun anime à classer. Seuls ceux que tu as commencés comptent : en
+				cours, terminés ou inachevés.
 			</p>
 		);
 	}

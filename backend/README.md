@@ -48,7 +48,13 @@ commentaire au nom d'un autre, et se fabriquer un score.
 
 ## Classement par duels (`internal/elo`)
 
-Chaque anime d'une watchlist part à **1000 points** et son classement suit le
+Seuls les animes **commencés** entrent au classement : `completed`, `ongoing` et
+`dropped`. Un anime `planned` n'a pas été vu, son propriétaire n'a donc pas d'avis
+à donner — il est écarté du classement comme de l'appariement, et un duel le
+concernant est rejeté même s'il est forgé à la main. S'il passe plus tard à un
+statut commencé, il rejoint le classement avec la note qu'il avait.
+
+Chaque anime éligible part à **1000 points** et son classement suit le
 système **Elo**.
 
 Pour un duel entre A et B, le score attendu de A se déduit de l'écart de notes :

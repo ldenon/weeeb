@@ -179,6 +179,24 @@ func TestRatingChangeNeverExceedsK(t *testing.T) {
 	}
 }
 
+// A planned anime has not been watched, so it must never take part in a duel.
+func TestOnlyStartedAnimesAreRankable(t *testing.T) {
+	cases := map[string]bool{
+		"completed": true,
+		"ongoing":   true,
+		"dropped":   true,
+		"planned":   false,
+		"":          false,
+		"unknown":   false,
+	}
+
+	for status, want := range cases {
+		if got := IsRankable(status); got != want {
+			t.Errorf("status %q: rankable=%v, expected %v", status, got, want)
+		}
+	}
+}
+
 func TestOutcomeScores(t *testing.T) {
 	cases := []struct {
 		outcome Outcome

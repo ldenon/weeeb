@@ -4,6 +4,7 @@ import AnimeThumbnail from "@/components/AnimeThumbnail";
 import useWatchlistAnimes from "@/hooks/useWatchlistAnimes";
 import { pb } from "@/lib/pocketbase";
 import type { WatchlistRecord, WatchlistStatus } from "@/types";
+import { isRankable } from "@/utils/anime";
 
 export const Route = createFileRoute("/_app/")({ component: App });
 
@@ -60,14 +61,17 @@ function App() {
 
 			{isLoading && <p className="text-text-secondary mt-12">Chargement…</p>}
 
-			{!isLoading && entries.length >= 2 && (
-				<Link
-					to="/ranking"
-					className="inline-block mt-12 text-sm px-6 py-3 rounded-full bg-bg-light text-text border border-border-muted hover:bg-gradient-hover"
-				>
-					Classer mes animes en duel →
-				</Link>
-			)}
+			{/* The ranking ignores planned animes, so the link must not promise a
+			    duel the server would refuse to set up. */}
+			{!isLoading &&
+				entries.filter((e) => isRankable(e.status)).length >= 2 && (
+					<Link
+						to="/ranking"
+						className="inline-block mt-12 text-sm px-6 py-3 rounded-full bg-bg-light text-text border border-border-muted hover:bg-gradient-hover"
+					>
+						Classer mes animes en duel →
+					</Link>
+				)}
 
 			<Section
 				title="Masterclass"
