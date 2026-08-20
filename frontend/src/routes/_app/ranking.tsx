@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Swords, Trophy } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import useMembers from "@/hooks/useMembers";
 import useNextMatch from "@/hooks/useNextMatch";
 import useRanking from "@/hooks/useRanking";
 import useResetRanking from "@/hooks/useResetRanking";
 import useSubmitMatch from "@/hooks/useSubmitMatch";
+import useUserRanking from "@/hooks/useUserRanking";
+import { pb } from "@/lib/pocketbase";
 import type {
 	EloEntry,
 	MatchOutcome,
@@ -21,14 +24,23 @@ type Tab = "duel" | "classement";
 
 function RouteComponent() {
 	const [tab, setTab] = useState<Tab>("duel");
+	// Vide = son propre classement. Les duels, eux, restent toujours personnels.
+	const [memberId, setMemberId] = useState("");
 
 	const { data: match, isLoading: isMatchLoading } = useNextMatch();
 	const { data: ranking, isLoading: isRankingLoading } = useRanking();
+	const otherRanking = useUserRanking(memberId);
 	const submitMatch = useSubmitMatch();
 	const resetRanking = useResetRanking();
 
 	const pair = match?.pair ?? null;
-	const progress = ranking?.progress ?? match?.progress;
+	const isViewingOther = Boolean(memberId);
+	const shownRanking = isViewingOther ? otherRanking.data : ranking;
+
+	const progress =
+		tab === "classement"
+			? shownRanking?.progress
+			: (ranking?.progress ?? match?.progress);
 
 	const vote = useCallback(
 		(outcome: MatchOutcome) => {
@@ -61,7 +73,12 @@ function RouteComponent() {
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [tab, vote]);
 
-	const isLoading = isMatchLoading || isRankingLoading;
+	const isLoading =
+		tab === "classement"
+			? isViewingOther
+				? otherRanking.isLoading
+				: isRankingLoading
+			: isMatchLoading || isRankingLoading;
 
 	return (
 		<div className="mt-4">
@@ -90,7 +107,11 @@ function RouteComponent() {
 
 			{isLoading && <p className="text-text-secondary mt-12">Chargement…</p>}
 
-			{!isLoading && !pair && (
+			{tab === "classement" && (
+				<MemberPicker selected={memberId} onSelect={setMemberId} />
+			)}
+
+			{tab === "duel" && !isLoading && !pair && (
 				<div className="mt-16 flex flex-col gap-4">
 					<p className="text-text-secondary">
 						Il faut au moins deux animes commencés pour lancer un duel. Les
@@ -111,9 +132,10 @@ function RouteComponent() {
 				/>
 			)}
 
-			{tab === "classement" && (
+			{tab === "classement" && !isLoading && (
 				<Ranking
-					entries={ranking?.ranking ?? []}
+					entries={shownRanking?.ranking ?? []}
+					ownerName={shownRanking?.user?.name}
 					onReset={() => {
 						if (
 							window.confirm(
@@ -131,6 +153,60 @@ function RouteComponent() {
 				<p className="text-danger text-sm mt-4">{submitMatch.error.message}</p>
 			)}
 		</div>
+	);
+}
+
+/** Choisit le classement à consulter : le sien, ou celui d'un autre membre. */
+function MemberPicker({
+	selected,
+	onSelect,
+}: {
+	selected: string;
+	onSelect: (id: string) => void;
+}) {
+	const { data: members } = useMembers();
+	const currentUserId = pb.authStore.record?.id;
+
+	const others = members?.filter((member) => member.id !== currentUserId) ?? [];
+
+	if (others.length === 0) return null;
+
+	return (
+		<div className="flex flex-wrap gap-2 mt-6">
+			<MemberChip
+				label="Moi"
+				active={selected === ""}
+				onClick={() => onSelect("")}
+			/>
+			{others.map((member) => (
+				<MemberChip
+					key={member.id}
+					label={member.name || "Sans nom"}
+					active={selected === member.id}
+					onClick={() => onSelect(member.id)}
+				/>
+			))}
+		</div>
+	);
+}
+
+function MemberChip({
+	label,
+	active,
+	onClick,
+}: {
+	label: string;
+	active: boolean;
+	onClick: () => void;
+}) {
+	const className = active
+		? "text-xs px-4 py-2 rounded-full bg-bg-light text-text border border-secondary capitalize"
+		: "text-xs px-4 py-2 rounded-full bg-bg text-text-secondary border border-border-muted hover:bg-gradient-hover capitalize";
+
+	return (
+		<button type="button" onClick={onClick} className={className}>
+			{label}
+		</button>
 	);
 }
 
@@ -261,18 +337,22 @@ function Contender({
 
 function Ranking({
 	entries,
+	ownerName,
 	onReset,
 	isResetting,
 }: {
 	entries: Array<RankedEntry>;
+	/** Renseigné seulement pour le classement d'un autre membre. */
+	ownerName?: string;
 	onReset: () => void;
 	isResetting: boolean;
 }) {
 	if (entries.length === 0) {
 		return (
 			<p className="text-text-secondary mt-12">
-				Aucun anime à classer. Seuls ceux que tu as commencés comptent : en
-				cours, terminés ou inachevés.
+				{ownerName
+					? `${ownerName} n'a encore aucun anime classé.`
+					: "Aucun anime à classer. Seuls ceux que tu as commencés comptent : en cours, terminés ou inachevés."}
 			</p>
 		);
 	}
@@ -313,14 +393,16 @@ function Ranking({
 				</Link>
 			))}
 
-			<button
-				type="button"
-				onClick={onReset}
-				disabled={isResetting}
-				className="self-start mt-8 text-xs text-danger underline cursor-pointer disabled:opacity-50"
-			>
-				{isResetting ? "Réinitialisation…" : "Réinitialiser le classement"}
-			</button>
+			{!ownerName && (
+				<button
+					type="button"
+					onClick={onReset}
+					disabled={isResetting}
+					className="self-start mt-8 text-xs text-danger underline cursor-pointer disabled:opacity-50"
+				>
+					{isResetting ? "Réinitialisation…" : "Réinitialiser le classement"}
+				</button>
+			)}
 		</div>
 	);
 }

@@ -113,6 +113,7 @@ cloisonnés sur l'utilisateur du jeton.
 | Méthode | Chemin | Effet |
 |---|---|---|
 | `GET` | `/api/weeeb/ranking` | Classement trié, ex aequo numérotés 1, 2, 2, 4 |
+| `GET` | `/api/weeeb/ranking/user/{userId}` | Le classement d'un autre membre, en lecture seule |
 | `GET` | `/api/weeeb/ranking/match` | Prochain duel équilibré (`pair: null` si moins de 2 animes) |
 | `POST` | `/api/weeeb/ranking/match` | Enregistre un résultat et renvoie le duel suivant |
 | `POST` | `/api/weeeb/ranking/reset` | Remet toutes les notes à 1000 et purge l'historique |

@@ -76,7 +76,14 @@ export interface MatchPair {
 	b: EloEntry;
 }
 
+/** Présent seulement quand on consulte le classement d'un autre membre. */
+export interface RankingOwner {
+	id: string;
+	name: string;
+}
+
 export interface RankingResponse {
+	user?: RankingOwner;
 	ranking: Array<RankedEntry>;
 	progress: RankingProgress;
 }

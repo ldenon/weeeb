@@ -18,7 +18,15 @@ type RankedEntry struct {
 	Rank int `json:"rank"`
 }
 
+// rankingUser identifies whose ranking is being returned, so the interface can
+// label it without a second request.
+type rankingUser struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
 type rankingResponse struct {
+	User     *rankingUser  `json:"user,omitempty"`
 	Ranking  []RankedEntry `json:"ranking"`
 	Progress Progress      `json:"progress"`
 }
@@ -43,6 +51,7 @@ func RegisterRoutes(e *core.ServeEvent) {
 	g.Bind(apis.RequireAuth("users"))
 
 	g.GET("", handleRanking)
+	g.GET("/user/{userId}", handleUserRanking)
 	g.GET("/match", handleNextMatch)
 	g.POST("/match", handleSubmitMatch)
 	g.POST("/reset", handleReset)
@@ -55,6 +64,34 @@ func handleRanking(e *core.RequestEvent) error {
 	}
 
 	return e.JSON(http.StatusOK, rankingResponse{
+		Ranking:  withRanks(Rank(entries)),
+		Progress: progress,
+	})
+}
+
+// handleUserRanking returns another member's ranking.
+//
+// No new exposure: the watchlists and users collections are already publicly
+// listable, this endpoint only presents the same data already ordered.
+// Duels remain personal — there is no equivalent write endpoint.
+func handleUserRanking(e *core.RequestEvent) error {
+	userId := e.Request.PathValue("userId")
+	if userId == "" {
+		return router.NewBadRequestError("Identifiant d'utilisateur manquant.", nil)
+	}
+
+	user, err := e.App.FindRecordById("users", userId)
+	if err != nil {
+		return router.NewNotFoundError("Ce membre n'existe pas.", err)
+	}
+
+	entries, progress, err := loadState(e.App, userId)
+	if err != nil {
+		return err
+	}
+
+	return e.JSON(http.StatusOK, rankingResponse{
+		User:     &rankingUser{Id: user.Id, Name: user.GetString("name")},
 		Ranking:  withRanks(Rank(entries)),
 		Progress: progress,
 	})

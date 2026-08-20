@@ -159,6 +159,7 @@ deux propriétés jusqu'à 40 animes.
 | Méthode | Chemin | Effet |
 |---|---|---|
 | `GET` | `/api/weeeb/ranking` | Classement trié, ex aequo numérotés 1, 2, 2, 4 |
+| `GET` | `/api/weeeb/ranking/user/{userId}` | Le classement d'un autre membre |
 | `GET` | `/api/weeeb/ranking/match` | Prochain duel (`pair: null` si moins de 2 animes) |
 | `POST` | `/api/weeeb/ranking/match` | Enregistre un résultat, renvoie le duel suivant |
 | `POST` | `/api/weeeb/ranking/reset` | Notes à 1000, historique purgé |
@@ -210,7 +211,7 @@ Tout l'espace connecté est donc rendu côté client ; le SSR ne couvre que le s
 | Route | Contenu |
 |---|---|
 | `/` | Recherche + 5 sections (Masterclass, En cours, Prévu, Terminé, Inachevé) rendues par un composant `Section` unique. Lien vers les duels dès 2 animes. |
-| `/ranking` | Deux onglets. **Duel** : deux affiches côte à côte, clic pour désigner le vainqueur, bouton « Match nul », raccourcis ← → et espace. **Classement** : liste ordonnée avec rang, score et nombre de duels, plus une réinitialisation. Barre de progression commune. |
+| `/ranking` | Deux onglets. **Duel** : deux affiches côte à côte, clic pour désigner le vainqueur, bouton « Match nul », raccourcis ← → et espace. **Classement** : liste ordonnée avec rang, score et nombre de duels, sélecteur pour consulter le classement d'un autre membre, et réinitialisation sur le sien seulement. Barre de progression commune. |
 | `/anime/$animeId` | Fiche : affiche, **rang et score issus du classement**, genres, synopsis, bouton de statut (avec retrait de la liste), pastilles des autres membres, formulaire d'avis auto-sauvegardé. |
 | `/anime/add` | Formulaire validé par Zod + mode d'emploi. |
 | `/genres/$genre` | `loader` : `all` → tout, sinon résolution du slug puis filtre. |
