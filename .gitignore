@@ -1,14 +1,11 @@
-node_modules
+# Fichiers système
 .DS_Store
-dist
-dist-ssr
-*.local
-count.txt
-.env
-.nitro
-.tanstack
-.wrangler
-.output
-.vinxi
-todos.json
-package-lock.json
+Thumbs.db
+
+# Éditeurs
+.idea/
+*.swp
+*.swo
+
+# Les règles propres à chaque moitié restent dans
+# frontend/.gitignore et backend/.gitignore
