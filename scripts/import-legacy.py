@@ -35,7 +35,12 @@ import urllib.request
 
 # Dependency order: a collection may only be imported once everything it
 # points at already exists.
-COLLECTIONS = ["genres", "users", "animes", "watchlists", "comments"]
+#
+# The list is explicit rather than discovered, because the order matters and no
+# reliable order can be derived from the schema alone. audit_coverage() below
+# guards against the obvious downside: a collection present on the legacy side
+# but missing from this list would otherwise be skipped in silence.
+COLLECTIONS = ["genres", "users", "animes", "watchlists", "comments", "elo_matches"]
 
 # Fields that must never be copied verbatim.
 #   - file fields need a real upload, which the REST create call cannot express
@@ -96,6 +101,20 @@ class Instance:
             die(f"{self.label}: superuser login failed ({status}) {body.get('message', '')}")
         self.token = body["token"]
 
+    def all_collections(self):
+        """Every non-system collection, superuser-only endpoint."""
+        status, body = self.request("GET", "/api/collections?perPage=200&skipTotal=1")
+        if status != 200:
+            die(f"{self.label}: cannot list the collections ({status}) "
+                f"{body.get('message', '')}")
+
+        return [
+            item for item in body.get("items", [])
+            # views hold no data of their own, they are recomputed from a query
+            if not item.get("system") and not item["name"].startswith("_")
+            and item.get("type") != "view"
+        ]
+
     def collection_fields(self, name):
         """Field names the target collection actually accepts."""
         status, body = self.request("GET", f"/api/collections/{name}")
@@ -119,6 +138,28 @@ class Instance:
 
     def existing_ids(self, name):
         return {record["id"] for record in self.list_records(name)}
+
+
+def audit_coverage(legacy):
+    """Warn about legacy collections this script would not copy.
+
+    Without this, adding a collection to the app and forgetting to list it here
+    would produce a silent partial import that looks like a success.
+    """
+    found = {item["name"] for item in legacy.all_collections()}
+    unlisted = sorted(found - set(COLLECTIONS))
+    absent = sorted(set(COLLECTIONS) - found)
+
+    for name in absent:
+        print(f"  note: '{name}' does not exist on the legacy instance, nothing to copy")
+
+    if unlisted:
+        print("\n  WARNING — these legacy collections are NOT copied:")
+        for name in unlisted:
+            print(f"    - {name}")
+        print("  Add them to COLLECTIONS, in dependency order, if they hold data you need.\n")
+
+    return unlisted
 
 
 def die(message):
@@ -181,7 +222,8 @@ def import_collection(name, legacy, target, dry_run):
             print(f"    {record['id']}: {status} {body.get('message', '')} {body.get('data', '')}")
 
     verb = "would create" if dry_run else "created"
-    print(f"  {name:12s} {verb}: {created}   already present: {skipped}   failed: {failed}")
+    print(f"  {name:12s} source: {len(records):<5d} {verb}: {created}   "
+          f"already present: {skipped}   failed: {failed}")
     return created, skipped, failed
 
 
@@ -210,6 +252,8 @@ def main():
     print(f"\n{'DRY RUN — nothing will be written' if args.dry_run else 'IMPORT'}")
     print(f"  from {legacy.base_url}\n  to   {target.base_url}\n")
 
+    unlisted = audit_coverage(legacy)
+
     total_failed = 0
     for name in COLLECTIONS:
         _, _, failed = import_collection(name, legacy, target, args.dry_run)
@@ -221,6 +265,9 @@ def main():
         sys.exit(1)
 
     print("\nDone." if not args.dry_run else "\nDry run complete.")
+
+    if unlisted:
+        print(f"Reminder: {len(unlisted)} legacy collection(s) were left behind, listed above.")
 
 
 if __name__ == "__main__":

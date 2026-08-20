@@ -91,8 +91,10 @@ python3 scripts/import-legacy.py             # importe
 ```
 
 Les collections sont copiées dans l'ordre de leurs dépendances (genres, users,
-animes, watchlists, comments) et **les identifiants sont préservés**, ce qui garde
-toutes les relations valides sans table de correspondance. Le script est
+animes, watchlists, comments, elo_matches) et **les identifiants sont préservés**,
+ce qui garde toutes les relations valides sans table de correspondance. Le script
+énumère les collections de l'ancienne instance et **signale bruyamment celles
+qu'il ne copie pas**, pour qu'un import partiel ne passe jamais pour un succès. Le script est
 idempotent : un enregistrement déjà présent est ignoré, on peut donc le relancer
 après avoir corrigé une erreur.
 
