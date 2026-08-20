@@ -23,9 +23,21 @@ func Register(app core.App) {
 
 func registerWatchlistHooks(app core.App) {
 	// On creation, the owner and the counters are imposed by the server.
+	//
+	// Superusers are exempt: administering records on someone else's behalf is
+	// exactly what the dashboard and the legacy import script do. Their writes
+	// are trusted, so only the missing rating is defaulted.
 	app.OnRecordCreateRequest("watchlists").BindFunc(func(e *core.RecordRequestEvent) error {
 		if e.Auth == nil {
 			return router.NewUnauthorizedError("Connexion requise.", nil)
+		}
+
+		if e.Auth.IsSuperuser() {
+			if e.Record.GetFloat("elo") == 0 {
+				e.Record.Set("elo", elo.DefaultRating)
+			}
+
+			return e.Next()
 		}
 
 		e.Record.Set("user", e.Auth.Id)
@@ -38,11 +50,15 @@ func registerWatchlistHooks(app core.App) {
 	// On update, only `status` and `isMasterclass` are free: the rating moves
 	// solely through /api/weeeb/ranking.
 	app.OnRecordUpdateRequest("watchlists").BindFunc(func(e *core.RecordRequestEvent) error {
+		if e.Auth != nil && e.Auth.IsSuperuser() {
+			return e.Next()
+		}
+
 		original := e.Record.Original()
 
 		e.Record.Set("user", original.GetString("user"))
 		e.Record.Set("anime", original.GetString("anime"))
-		e.Record.Set("elo", original.GetInt("elo"))
+		e.Record.Set("elo", original.GetFloat("elo"))
 		e.Record.Set("matchCount", original.GetInt("matchCount"))
 
 		return e.Next()
@@ -55,13 +71,20 @@ func registerCommentHooks(app core.App) {
 			return router.NewUnauthorizedError("Connexion requise.", nil)
 		}
 
-		e.Record.Set("author", e.Auth.Id)
+		// Same exemption as for watchlists: a superuser may write on behalf of a user.
+		if !e.Auth.IsSuperuser() {
+			e.Record.Set("author", e.Auth.Id)
+		}
 
 		return e.Next()
 	})
 
 	// An existing review is never reassigned to another author or another anime.
 	app.OnRecordUpdateRequest("comments").BindFunc(func(e *core.RecordRequestEvent) error {
+		if e.Auth != nil && e.Auth.IsSuperuser() {
+			return e.Next()
+		}
+
 		original := e.Record.Original()
 
 		e.Record.Set("author", original.GetString("author"))

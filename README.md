@@ -72,6 +72,41 @@ d'abord activer l'auto-deploy.
 Les données PocketBase vivent dans le volume `pb_data` — à sauvegarder, c'est le seul
 état non reconstructible du projet.
 
+## Migrer les données d'une ancienne instance
+
+`scripts/import-legacy.py` recopie les données d'une instance PocketBase existante
+vers celle-ci, en passant par les deux API REST. Aucune archive, aucun
+téléchargement, l'ancienne instance est lue sans être modifiée.
+
+```bash
+export LEGACY_URL=https://ancienne-instance
+export LEGACY_EMAIL=admin@exemple.fr
+export LEGACY_PASSWORD=...
+export TARGET_URL=https://nouvelle-instance
+export TARGET_EMAIL=admin@exemple.fr
+export TARGET_PASSWORD=...
+
+python3 scripts/import-legacy.py --dry-run   # compte sans rien écrire
+python3 scripts/import-legacy.py             # importe
+```
+
+Les collections sont copiées dans l'ordre de leurs dépendances (genres, users,
+animes, watchlists, comments) et **les identifiants sont préservés**, ce qui garde
+toutes les relations valides sans table de correspondance. Le script est
+idempotent : un enregistrement déjà présent est ignoré, on peut donc le relancer
+après avoir corrigé une erreur.
+
+Trois points à connaître :
+
+- **Les connexions Google continuent de fonctionner.** Les emails sont préservés,
+  et PocketBase rattache un compte OAuth sans lien existant en cherchant par email.
+- **Les avatars ne sont pas copiés** : un champ fichier demande un vrai téléversement,
+  impossible depuis une simple création JSON.
+- **Les mots de passe sont régénérés au hasard et inutilisables.** Les comptes
+  n'existent que pour l'OAuth ; personne ne peut se connecter avec.
+
+Les scores Elo repartent à 1000 : l'ancienne instance est antérieure au classement.
+
 ## Aller plus loin
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — modèle de données, flux, dette, décisions ouvertes
