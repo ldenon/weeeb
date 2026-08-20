@@ -51,12 +51,23 @@ Deux applications Dokploy sur ce même dépôt, distinguées par leur chemin :
 | | Backend | Frontend |
 |---|---|---|
 | Build Path | `backend` | `frontend` |
-| Dockerfile Path | `backend/Dockerfile` | — |
+| Dockerfile Path | `Dockerfile` | — |
+| Docker Context Path | *(laisser vide)* | — |
 | Watch Paths | `backend/*` | `frontend/*` |
 
 Les *Watch Paths* évitent qu'un commit ne touchant qu'une moitié redéploie l'autre.
 Ils fonctionnent sans configuration avec GitHub ; avec un autre fournisseur il faut
 d'abord activer l'auto-deploy.
+
+**Piège sur les chemins.** Les deux champs n'ont pas le même point de départ :
+
+- le *Dockerfile Path* est relatif au **Build Path** — donc `Dockerfile`, pas
+  `backend/Dockerfile`, sinon Dokploy cherche dans `code/backend/backend/` et
+  échoue en écrivant le `.env` (« Directory nonexistent ») ;
+- le *Docker Context Path* est relatif à la **racine du dépôt**. Laissé vide, il
+  retombe sur le dossier du Dockerfile, ce qui est le comportement voulu ici :
+  le Dockerfile fait `COPY go.mod go.sum ./` et attend `backend/` comme contexte.
+  Si tu tiens à le renseigner, mets `backend` — surtout pas `.`.
 
 Les données PocketBase vivent dans le volume `pb_data` — à sauvegarder, c'est le seul
 état non reconstructible du projet.
