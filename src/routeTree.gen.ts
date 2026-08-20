@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppRankingRouteImport } from './routes/_app/ranking'
 import { Route as AppGenresGenreRouteImport } from './routes/_app/genres/$genre'
 import { Route as AppAnimeAddRouteImport } from './routes/_app/anime/add'
 import { Route as AppAnimeAnimeIdRouteImport } from './routes/_app/anime/$animeId'
@@ -28,6 +29,11 @@ const AppRouteRoute = AppRouteRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppRankingRoute = AppRankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppGenresGenreRoute = AppGenresGenreRouteImport.update({
@@ -49,12 +55,14 @@ const AppAnimeAnimeIdRoute = AppAnimeAnimeIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
+  '/ranking': typeof AppRankingRoute
   '/anime/$animeId': typeof AppAnimeAnimeIdRoute
   '/anime/add': typeof AppAnimeAddRoute
   '/genres/$genre': typeof AppGenresGenreRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/ranking': typeof AppRankingRoute
   '/': typeof AppIndexRoute
   '/anime/$animeId': typeof AppAnimeAnimeIdRoute
   '/anime/add': typeof AppAnimeAddRoute
@@ -64,6 +72,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteRouteWithChildren
   '/login': typeof LoginRoute
+  '/_app/ranking': typeof AppRankingRoute
   '/_app/': typeof AppIndexRoute
   '/_app/anime/$animeId': typeof AppAnimeAnimeIdRoute
   '/_app/anime/add': typeof AppAnimeAddRoute
@@ -74,15 +83,23 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/ranking'
     | '/anime/$animeId'
     | '/anime/add'
     | '/genres/$genre'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/' | '/anime/$animeId' | '/anime/add' | '/genres/$genre'
+  to:
+    | '/login'
+    | '/ranking'
+    | '/'
+    | '/anime/$animeId'
+    | '/anime/add'
+    | '/genres/$genre'
   id:
     | '__root__'
     | '/_app'
     | '/login'
+    | '/_app/ranking'
     | '/_app/'
     | '/_app/anime/$animeId'
     | '/_app/anime/add'
@@ -117,6 +134,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/ranking': {
+      id: '/_app/ranking'
+      path: '/ranking'
+      fullPath: '/ranking'
+      preLoaderRoute: typeof AppRankingRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/genres/$genre': {
       id: '/_app/genres/$genre'
       path: '/genres/$genre'
@@ -142,6 +166,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteRouteChildren {
+  AppRankingRoute: typeof AppRankingRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAnimeAnimeIdRoute: typeof AppAnimeAnimeIdRoute
   AppAnimeAddRoute: typeof AppAnimeAddRoute
@@ -149,6 +174,7 @@ interface AppRouteRouteChildren {
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppRankingRoute: AppRankingRoute,
   AppIndexRoute: AppIndexRoute,
   AppAnimeAnimeIdRoute: AppAnimeAnimeIdRoute,
   AppAnimeAddRoute: AppAnimeAddRoute,

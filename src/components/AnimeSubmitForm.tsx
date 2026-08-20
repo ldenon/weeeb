@@ -1,170 +1,189 @@
-import { useForm } from "@tanstack/react-form-start"
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useForm } from "@tanstack/react-form-start";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
+import useGenres from "@/hooks/useGenres";
 import { pb } from "@/lib/pocketbase";
+import type { AnimeRecord } from "@/types";
 
 interface GenreTagProps {
-    name: string;
-    selected: boolean;
-    onSelect: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
-    onDeselect: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+	name: string;
+	selected: boolean;
+	onToggle: () => void;
 }
 
 interface FormData {
-    name: string;
-    img: string;
-    synopsis: string;
-    genres: Array<string>;
+	name: string;
+	img: string;
+	synopsis: string;
+	genres: Array<string>;
 }
 
-function GenreTag({
-    selected,
-    name,
-    onSelect,
-    onDeselect,
-}: GenreTagProps) {
-    const classActive =
-        "bg-bg-light text-text-muted px-4 py-2 rounded-full cursor-pointer border-t-highlight bg-gradient-hover border-border-muted";
-    const classNormal =
-        "bg-bg-light text-text-secondary px-4 py-2 rounded-full cursor-pointer";
+const formSchema = z.object({
+	name: z.string().min(2, "Le nom doit faire au moins 2 caractères."),
+	img: z.url("L'image doit être une URL valide."),
+	synopsis: z.string().min(2, "Le synopsis doit faire au moins 2 caractères."),
+	genres: z.array(z.string()).min(1, "Choisis au moins un genre."),
+});
 
-    return (
-        <button
-            type="button"
-            className={selected ? classActive : classNormal}
-            onClick={(e) => {
-                if (selected) {
-                    return onDeselect(e);
-                }
-                return onSelect(e);
-            }}
-        >
-            {name}
-        </button>
-    );
+function GenreTag({ selected, name, onToggle }: GenreTagProps) {
+	const className = selected
+		? "bg-bg-light text-text-muted px-4 py-2 rounded-full cursor-pointer border-t-highlight bg-gradient-hover border-border-muted"
+		: "bg-bg-light text-text-secondary px-4 py-2 rounded-full cursor-pointer";
+
+	return (
+		<button
+			type="button"
+			aria-pressed={selected}
+			className={className}
+			onClick={onToggle}
+		>
+			{name}
+		</button>
+	);
 }
-
 
 export default function AnimeSubmitForm() {
-    const { data: genres } = useQuery({
-        queryKey: ["genres"],
-        queryFn: () => pb.collection("genres").getFullList()
-    })
+	const navigate = useNavigate();
+	const queryClient = useQueryClient();
+	const { data: genres } = useGenres();
 
-    const formMutation = useMutation({
-        mutationFn: async (data: FormData) => {
-            return await pb.collection("animes").create(data);
-        },
-        onError: (err) => console.error(err)
-    })
+	const createAnime = useMutation({
+		mutationFn: (data: FormData) =>
+			pb.collection("animes").create<AnimeRecord>(data),
+		onSuccess: (anime) => {
+			queryClient.invalidateQueries({ queryKey: ["animes"] });
+			navigate({ to: "/anime/$animeId", params: { animeId: anime.id } });
+		},
+	});
 
-    const defaultValues: FormData = {
-        name: "",
-        img: "",
-        synopsis: "",
-        genres: []
-    }
+	const form = useForm({
+		defaultValues: {
+			name: "",
+			img: "",
+			synopsis: "",
+			genres: [],
+		} as FormData,
+		validators: { onSubmit: formSchema },
+		onSubmit: async ({ value }) => {
+			await createAnime.mutateAsync(value);
+			form.reset();
+		},
+	});
 
-    const formSchema = z.object({
-        name: z.string().min(2),
-        img: z.string().url(),
-        synopsis: z.string().min(2),
-        genres: z.array(z.string()).min(1)
-    });
+	return (
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				form.handleSubmit();
+			}}
+			className="grid gap-8 mt-8"
+		>
+			<form.Field name="name">
+				{(field) => (
+					<div>
+						<input
+							type="text"
+							placeholder="Nom de l'anime"
+							className="outline-none w-full rounded-lg bg-bg-light text-text-muted px-6 py-3"
+							value={field.state.value}
+							onChange={(e) => field.handleChange(e.target.value)}
+						/>
+						<FieldError messages={field.state.meta.errors} />
+					</div>
+				)}
+			</form.Field>
 
+			<form.Field name="img">
+				{(field) => (
+					<div>
+						<input
+							type="text"
+							placeholder="url image"
+							className="outline-none w-full rounded-lg bg-bg-light text-text-muted px-6 py-3"
+							value={field.state.value}
+							onChange={(e) => field.handleChange(e.target.value)}
+						/>
+						<FieldError messages={field.state.meta.errors} />
+					</div>
+				)}
+			</form.Field>
 
-    const form = useForm({
-        defaultValues: defaultValues,
-        onSubmit: async ({ value }) => {
-            formMutation.mutate(value);
-            form.reset();
-        },
-        validators: {
-            onSubmit: formSchema
-        }
-    })
+			<form.Field name="genres" mode="array">
+				{(field) => (
+					<div>
+						<div className="flex flex-wrap gap-4">
+							{genres?.map((genre) => {
+								const index = field.state.value.indexOf(genre.id);
 
-    return (
-        <form onSubmit={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            form.handleSubmit()
-        }} className="grid gap-8 mt-8">
-            <form.Field name="name" children={(field) => (
-                <input
-                    type="text"
-                    required
-                    placeholder="Nom de l'anime"
-                    className="outline-none w-full rounded-lg bg-bg-light text-text-muted px-6 py-3"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                />
-            )} />
+								return (
+									<GenreTag
+										key={genre.id}
+										name={genre.name}
+										selected={index !== -1}
+										onToggle={() =>
+											index === -1
+												? field.pushValue(genre.id)
+												: field.removeValue(index)
+										}
+									/>
+								);
+							})}
+						</div>
+						<FieldError messages={field.state.meta.errors} />
+					</div>
+				)}
+			</form.Field>
 
-            <form.Field
-                name="img"
-                children={(field) => (
-                    <input
-                        type="text"
-                        required
-                        placeholder="url image"
-                        className="outline-none w-full rounded-lg bg-bg-light text-text-muted px-6 py-3"
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                    />
-                )}
-            />
+			<form.Field name="synopsis">
+				{(field) => (
+					<div>
+						<textarea
+							placeholder="Synopsis"
+							className="outline-none w-full rounded-lg bg-bg-light text-text-muted p-6 h-56"
+							value={field.state.value}
+							onChange={(e) => field.handleChange(e.target.value)}
+						/>
+						<FieldError messages={field.state.meta.errors} />
+					</div>
+				)}
+			</form.Field>
 
-            <form.Field
-                name="genres"
-                mode="array"
-                children={(field) => {
-                    return <div className="flex  flex-wrap gap-4">
-                        {genres?.map((g) => {
-                            return (
-                                <GenreTag
-                                    key={g.name}
-                                    selected={field.state.value.includes(g.id)}
-                                    name={g.name}
-                                    onSelect={() => field.pushValue(g.id)}
-                                    onDeselect={() => field.removeValue(field.state.value.indexOf(g.id))}
-                                />
-                            );
-                        })}
-                    </div>
-                }}
-            />
+			{/* L'index unique sur `name` rejette les doublons : l'erreur était
+			    seulement loguée en console, l'utilisateur ne voyait rien. */}
+			{createAnime.isError && (
+				<p className="text-danger text-sm">
+					L'anime n'a pas pu être ajouté. Il existe peut-être déjà.
+				</p>
+			)}
 
+			<form.Subscribe selector={(state) => state.isSubmitting}>
+				{(isSubmitting) => (
+					<button
+						type="submit"
+						className="outline-none border-0 cursor-pointer text-white font-bold rounded-md bg-blue-400 py-3 disabled:opacity-60"
+						disabled={isSubmitting}
+					>
+						{isSubmitting ? "Ajout en cours…" : "Ajouter"}
+					</button>
+				)}
+			</form.Subscribe>
+		</form>
+	);
+}
 
+function FieldError({ messages }: { messages: Array<unknown> }) {
+	if (messages.length === 0) return null;
 
+	const text = messages
+		.map((m) =>
+			typeof m === "string" ? m : ((m as { message?: string })?.message ?? ""),
+		)
+		.filter(Boolean)
+		.join(" ");
 
-            <form.Field
-                name="synopsis"
-                children={(field) => (
-                    <textarea
-                        required
-                        placeholder="Synopsis"
-                        className="outline-none w-full rounded-lg bg-bg-light text-text-muted p-6 h-56"
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                    ></textarea>
-                )}
-            />
+	if (!text) return null;
 
-            <form.Subscribe
-                selector={(formState) => [formState.canSubmit, formState.isSubmitting]}
-            >
-                {([canSubmit]) => (
-                    <button
-                        type="submit"
-                        className="outline-none border-0 cursor-pointer text-white font-bold rounded-md bg-blue-400 py-3"
-                        disabled={!canSubmit}
-                    >
-                        Ajouter
-                    </button>
-                )}
-            </form.Subscribe>
-
-        </form>
-    );
+	return <p className="text-danger text-xs mt-2">{text}</p>;
 }

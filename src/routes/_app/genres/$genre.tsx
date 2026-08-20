@@ -1,52 +1,53 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
-import AnimeSearchBar from '@/components/AnimeSearchBar';
-import AnimeThumbnail from '@/components/AnimeThumbnail';
-import { pb } from '@/lib/pocketbase'
+import { createFileRoute, notFound } from "@tanstack/react-router";
+import AnimeSearchBar from "@/components/AnimeSearchBar";
+import AnimeThumbnail from "@/components/AnimeThumbnail";
+import { pb } from "@/lib/pocketbase";
+import type { AnimeRecord, GenreRecord } from "@/types";
 
-export const Route = createFileRoute('/_app/genres/$genre')({
-    component: RouteComponent,
-    loader: async ({ params }) => {
-        const genre = params.genre;
+const slugify = (name: string) => name.replaceAll(" ", "").toLowerCase();
 
-        // All animes
-        if (genre === "all") {
-            return await pb.collection("animes").getFullList({
-                sort: "name"
-            });
-        }
+export const Route = createFileRoute("/_app/genres/$genre")({
+	component: RouteComponent,
+	loader: async ({ params }) => {
+		if (params.genre === "all") {
+			return pb.collection("animes").getFullList<AnimeRecord>({ sort: "name" });
+		}
 
-        // Check if genre exists
-        const genres = await pb.collection("genres").getFullList();
-        const [foundGenre] = genres.filter(
-            (g) => g.name.replaceAll(" ", "").toLowerCase() === genre
-        );
+		const genres = await pb.collection("genres").getFullList<GenreRecord>();
+		const found = genres.find((genre) => slugify(genre.name) === params.genre);
 
-        if (!foundGenre) throw notFound();
+		if (!found) throw notFound();
 
-
-        // Find all animes of found genre
-        const animes = await pb.collection("animes").getFullList({
-            filter: `genres.id ?= "${foundGenre.id}"`,
-        });
-
-        return animes;
-    }
-})
+		return pb.collection("animes").getFullList<AnimeRecord>({
+			filter: pb.filter("genres.id ?= {:genreId}", { genreId: found.id }),
+			sort: "name",
+		});
+	},
+});
 
 function RouteComponent() {
+	const animes = Route.useLoaderData();
 
-    const animes = Route.useLoaderData();
+	return (
+		<>
+			<AnimeSearchBar />
 
-
-    return <>
-        <AnimeSearchBar />
-
-        <div className="grid grid-cols-4 md:grid-cols-7 gap-4 mt-12">
-            {
-                animes?.map((anime) => (
-                    <AnimeThumbnail key={anime.id} id={anime.id} imgUrl={anime.img} name={anime.name} />
-                ))
-            }
-        </div>
-    </>
+			<div className="grid grid-cols-4 md:grid-cols-7 gap-4 mt-12">
+				{animes.length === 0 ? (
+					<p className="text-text-secondary col-span-full">
+						Aucun anime dans cette catégorie.
+					</p>
+				) : (
+					animes.map((anime) => (
+						<AnimeThumbnail
+							key={anime.id}
+							id={anime.id}
+							imgUrl={anime.img}
+							name={anime.name}
+						/>
+					))
+				)}
+			</div>
+		</>
+	);
 }

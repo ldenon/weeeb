@@ -1,117 +1,112 @@
-import { useMutation } from "@tanstack/react-query";
 import { ChevronDown } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { pb } from "@/lib/pocketbase";
+import useRemoveFromWatchlist from "@/hooks/useRemoveFromWatchlist";
+import useSetWatchlistStatus from "@/hooks/useSetWatchlistStatus";
+import type { WatchlistStatus } from "@/types";
 import { statusTranslations } from "@/utils/anime";
 
-type WatchlistActionButtonsProps = {
-  currentStatus: string;
-  animeId: string;
-} & React.ComponentProps<"div">;
+const STATUSES: Array<WatchlistStatus> = [
+	"completed",
+	"ongoing",
+	"planned",
+	"dropped",
+];
+
+interface WatchlistActionButtonsProps {
+	animeId: string;
+	/** Statut actuel, ou null si l'anime n'est pas encore dans la liste. */
+	currentStatus: WatchlistStatus | null;
+}
 
 export default function WatchlistActionButtons({
-  animeId,
-  currentStatus,
+	animeId,
+	currentStatus,
 }: WatchlistActionButtonsProps) {
-  const [buttonText, setButtonText] = useState(currentStatus);
-  const [expanded, setExpanded] = useState(false);
+	const [expanded, setExpanded] = useState(false);
+	const containerRef = useRef<HTMLDivElement>(null);
 
-  const user = pb.authStore.record;
+	const setStatus = useSetWatchlistStatus(animeId);
+	const removeFromWatchlist = useRemoveFromWatchlist(animeId);
 
-  const statusMutation = useMutation({
-    mutationFn: async (newStatus: string) => {
-      try {
-        const watchlist = await pb
-          .collection("watchlists")
-          .getFirstListItem(
-            `user.id = "${user?.id}" && anime.id = "${animeId}"`,
-          );
+	// Le libellé suit la donnée : plus d'état local à resynchroniser à la main.
+	const label = currentStatus
+		? statusTranslations[currentStatus].fr
+		: "Ajouter à ma liste";
 
-        return await pb.collection("watchlists").update(watchlist.id, {
-          status: newStatus,
-        });
-      } catch {
-        return await pb.collection("watchlists").create({
-          user: user?.id,
-          anime: animeId,
-          isMasterclass: false,
-          status: newStatus,
-        });
-      }
-    },
-    onSuccess: (data) => {
-      setButtonText(
-        statusTranslations[data.status as keyof typeof statusTranslations].fr,
-      );
-    },
-  });
+	useEffect(() => {
+		if (!expanded) return;
 
-  return (
-    <div className="w-full flex relative my-4">
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="outline-none flex-1 border-0 cursor-pointer text-text hover:text-white  rounded-tl-md rounded-bl-md bg-blue-500 hover:bg-blue-500 duration-100 py-3 px-8 "
-      >
-        {buttonText}
-      </button>
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="outline-none border-0 cursor-pointer text-text hover:text-white rounded-tr-md rounded-br-md bg-blue-400 hover:bg-blue-500 duration-100 py-3 px-4"
-      >
-        <ChevronDown />
-      </button>
-      <div
-        className={
-          expanded
-            ? "absolute top-full flex flex-col bg-bg text-right text-text w-full mt-2 rounded-sm border-border-muted border "
-            : "hidden"
-        }
-      >
-        <button
-          type="button"
-          onClick={() => {
-            setExpanded(false);
-            statusMutation.mutate("completed");
-          }}
-          className="px-4 py-2 border-b hover:bg-gradient-hover border-border-muted cursor-pointer select-none"
-        >
-          Terminé
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setExpanded(false);
-            statusMutation.mutate("ongoing");
-          }}
-          className="px-4 py-2 border-b hover:bg-gradient-hover border-border-muted cursor-pointer select-none"
-        >
-          En cours
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setExpanded(false);
-            statusMutation.mutate("planned");
-          }}
-          className="px-4 py-2 border-b hover:bg-gradient-hover border-border-muted cursor-pointer select-none"
-        >
-          Prévu
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setExpanded(false);
-            statusMutation.mutate("dropped");
-          }}
-          className="px-4 py-2 border-b hover:bg-gradient-hover border-border-muted cursor-pointer select-none"
-        >
-          Inachevé
-        </button>
-      </div>
-    </div>
-  );
+		const closeOnOutsideClick = (event: MouseEvent) => {
+			if (!containerRef.current?.contains(event.target as Node)) {
+				setExpanded(false);
+			}
+		};
+
+		document.addEventListener("mousedown", closeOnOutsideClick);
+		return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+	}, [expanded]);
+
+	const isPending = setStatus.isPending || removeFromWatchlist.isPending;
+
+	return (
+		<div ref={containerRef} className="w-full flex flex-col relative my-4">
+			<div className="w-full flex">
+				<button
+					type="button"
+					onClick={() => setExpanded(!expanded)}
+					disabled={isPending}
+					className="outline-none flex-1 border-0 cursor-pointer text-text hover:text-white rounded-tl-md rounded-bl-md bg-blue-500 hover:bg-blue-500 duration-100 py-3 px-8 disabled:opacity-60"
+				>
+					{isPending ? "…" : label}
+				</button>
+				<button
+					type="button"
+					aria-label="Changer le statut"
+					onClick={() => setExpanded(!expanded)}
+					disabled={isPending}
+					className="outline-none border-0 cursor-pointer text-text hover:text-white rounded-tr-md rounded-br-md bg-blue-400 hover:bg-blue-500 duration-100 py-3 px-4 disabled:opacity-60"
+				>
+					<ChevronDown />
+				</button>
+			</div>
+
+			{expanded && (
+				<div className="absolute top-full flex flex-col bg-bg text-right text-text w-full mt-2 rounded-sm border-border-muted border z-10">
+					{STATUSES.map((status) => (
+						<button
+							key={status}
+							type="button"
+							onClick={() => {
+								setExpanded(false);
+								setStatus.mutate(status);
+							}}
+							className="px-4 py-2 border-b hover:bg-gradient-hover border-border-muted cursor-pointer select-none"
+						>
+							{statusTranslations[status].fr}
+						</button>
+					))}
+
+					{currentStatus && (
+						<button
+							type="button"
+							onClick={() => {
+								setExpanded(false);
+								removeFromWatchlist.mutate();
+							}}
+							className="px-4 py-2 text-danger hover:bg-gradient-hover cursor-pointer select-none"
+						>
+							Retirer de ma liste
+						</button>
+					)}
+				</div>
+			)}
+
+			{(setStatus.isError || removeFromWatchlist.isError) && (
+				<p className="text-danger text-xs mt-2">
+					{(setStatus.error ?? removeFromWatchlist.error)?.message}
+				</p>
+			)}
+		</div>
+	);
 }

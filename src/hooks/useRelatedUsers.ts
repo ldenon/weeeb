@@ -1,14 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { pb } from "@/lib/pocketbase";
+import type { WatchlistRecord } from "@/types";
 
+/** Les entrées de watchlist des autres membres pour un anime donné. */
 const useRelatedUsers = (animeId: string) =>
-  useQuery({
-    queryKey: ["relatedUsers", animeId],
-    queryFn: () =>
-      pb.collection("watchlists").getFullList({
-        filter: `anime = "${animeId}"`,
-        expand: "user",
-      }),
-  });
+	useQuery({
+		queryKey: ["relatedUsers", animeId],
+		enabled: Boolean(animeId),
+		queryFn: () =>
+			pb.collection("watchlists").getFullList<WatchlistRecord>({
+				filter: pb.filter("anime = {:anime}", { anime: animeId }),
+				expand: "user",
+			}),
+	});
 
 export default useRelatedUsers;

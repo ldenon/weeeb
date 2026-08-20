@@ -1,14 +1,13 @@
-import { Link } from "@tanstack/react-router";
+interface AnimeCommentProps {
+	author: string;
+	text: string;
+}
 
-export default function AnimeComment({ ...props }) {
-    const author = props.author;
-    const text = props.text;
-
-    return <div className="my-8">
-        <Link to="/" className="text-text-muted text-lg">{author}</Link>
-        <p className="text-text-secondary text-justify mt-2">
-            {text}
-        </p>
-    </div >
-
+export default function AnimeComment({ author, text }: AnimeCommentProps) {
+	return (
+		<div className="my-8">
+			<span className="text-text-muted text-lg">{author}</span>
+			<p className="text-text-secondary text-justify mt-2">{text}</p>
+		</div>
+	);
 }
