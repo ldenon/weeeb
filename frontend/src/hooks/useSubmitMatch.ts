@@ -26,7 +26,16 @@ const useSubmitMatch = () => {
 			}),
 		onSuccess: (next) => {
 			queryClient.setQueryData(["ranking", userId, "match"], next);
-			queryClient.invalidateQueries({ queryKey: ["ranking", userId] });
+
+			// `exact` est indispensable : sans lui l'invalidation s'applique par
+			// préfixe et emporte ["ranking", userId, "match"], donc le duel que la
+			// ligne précédente vient de poser. Comme useNextMatch a un staleTime
+			// nul, il refetchait aussitôt et l'appariement, aléatoire, renvoyait un
+			// duel différent — celui affiché était remplacé sous les yeux du votant.
+			queryClient.invalidateQueries({
+				queryKey: ["ranking", userId],
+				exact: true,
+			});
 		},
 	});
 };
