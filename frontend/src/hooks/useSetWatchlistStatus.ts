@@ -3,8 +3,8 @@ import { pb } from "@/lib/pocketbase";
 import type { WatchlistRecord, WatchlistStatus } from "@/types";
 
 /**
- * Positionne le statut d'un anime dans la watchlist de l'utilisateur,
- * en créant l'entrée si elle n'existe pas encore.
+ * Sets the status of an anime in the user's watchlist, creating the entry if it
+ * does not exist yet.
  */
 const useSetWatchlistStatus = (animeId: string) => {
 	const queryClient = useQueryClient();
@@ -29,7 +29,7 @@ const useSetWatchlistStatus = (animeId: string) => {
 					.update<WatchlistRecord>(existing.id, { status });
 			}
 
-			// `user`, `elo` et `matchCount` sont imposés côté serveur.
+			// `user`, `elo` and `matchCount` are imposed server-side.
 			return pb
 				.collection("watchlists")
 				.create<WatchlistRecord>({ anime: animeId, status });

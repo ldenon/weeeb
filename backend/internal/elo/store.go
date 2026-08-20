@@ -7,12 +7,12 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// Entry est une entrée de watchlist enrichie des métadonnées de l'anime.
-// La note est arrondie dès la lecture : elle est stockée en flottant pour ne pas
-// accumuler d'erreur au fil des duels, mais affichée et départagée en entier.
+// Entry is a watchlist entry enriched with the anime's metadata.
+// The rating is rounded as soon as it is read: it is stored as a float so that no
+// error accumulates over successive duels, but displayed and tie-broken as an integer.
 //
-// Les tags `db` sont obligatoires : sans eux dbx dérive le nom de colonne en
-// snake_case (AnimeId -> anime_id) et les champs composés restent vides.
+// The `db` tags are mandatory: without them dbx derives the column name in
+// snake_case (AnimeId -> anime_id) and the compound fields stay empty.
 type Entry struct {
 	WatchlistId string `db:"watchlistId" json:"watchlistId"`
 	AnimeId     string `db:"animeId" json:"animeId"`
@@ -23,7 +23,7 @@ type Entry struct {
 	MatchCount  int    `db:"matchCount" json:"matchCount"`
 }
 
-// LoadEntries retourne toute la watchlist de l'utilisateur, animes joints.
+// LoadEntries returns the user's entire watchlist, with the animes joined in.
 func LoadEntries(app core.App, userId string) ([]Entry, error) {
 	entries := []Entry{}
 
@@ -44,14 +44,14 @@ func LoadEntries(app core.App, userId string) ([]Entry, error) {
 		Bind(dbx.Params{"defaultElo": DefaultRating}).
 		All(&entries)
 	if err != nil {
-		return nil, fmt.Errorf("lecture de la watchlist: %w", err)
+		return nil, fmt.Errorf("reading the watchlist: %w", err)
 	}
 
 	return entries, nil
 }
 
-// PlayedPairs compte, par clé de duel, le nombre de fois qu'un duel a déjà été
-// arbitré par l'utilisateur.
+// PlayedPairs counts, per duel key, how many times the user has already
+// settled that duel.
 func PlayedPairs(app core.App, userId string) (map[string]int, error) {
 	var rows []struct {
 		PairKey string `db:"pairKey"`
@@ -65,7 +65,7 @@ func PlayedPairs(app core.App, userId string) (map[string]int, error) {
 		GroupBy("pairKey").
 		All(&rows)
 	if err != nil {
-		return nil, fmt.Errorf("lecture de l'historique des duels: %w", err)
+		return nil, fmt.Errorf("reading the duel history: %w", err)
 	}
 
 	played := make(map[string]int, len(rows))
@@ -76,7 +76,7 @@ func PlayedPairs(app core.App, userId string) (map[string]int, error) {
 	return played, nil
 }
 
-// TotalMatches retourne le nombre de duels arbitrés par l'utilisateur.
+// TotalMatches returns the number of duels settled by the user.
 func TotalMatches(app core.App, userId string) (int, error) {
 	var total int
 
@@ -86,14 +86,14 @@ func TotalMatches(app core.App, userId string) (int, error) {
 		Where(dbx.HashExp{"user": userId}).
 		Row(&total)
 	if err != nil {
-		return 0, fmt.Errorf("comptage des duels: %w", err)
+		return 0, fmt.Errorf("counting the duels: %w", err)
 	}
 
 	return total, nil
 }
 
-// RatingOf retourne la note stockée d'une entrée de watchlist, en retombant sur
-// la note de départ si le champ n'a jamais été renseigné.
+// RatingOf returns the stored rating of a watchlist entry, falling back to the
+// starting rating if the field was never set.
 func RatingOf(entry *core.Record) float64 {
 	rating := entry.GetFloat("elo")
 	if rating == 0 {
@@ -103,7 +103,7 @@ func RatingOf(entry *core.Record) float64 {
 	return rating
 }
 
-// FindWatchlistEntry retourne l'entrée de watchlist de l'utilisateur pour un anime.
+// FindWatchlistEntry returns the user's watchlist entry for a given anime.
 func FindWatchlistEntry(app core.App, userId, animeId string) (*core.Record, error) {
 	return app.FindFirstRecordByFilter(
 		"watchlists",

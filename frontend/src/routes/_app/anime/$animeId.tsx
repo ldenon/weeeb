@@ -30,8 +30,8 @@ function RouteComponent() {
 		[relatedUsers, user?.id],
 	);
 
-	// La note et le score étaient codés en dur : ils viennent maintenant du
-	// classement par duels (/api/weeeb/ranking).
+	// The rating and score used to be hardcoded: they now come from the duel
+	// ranking (/api/weeeb/ranking).
 	const rankingEntry = ranking?.ranking.find(
 		(entry) => entry.animeId === animeId,
 	);

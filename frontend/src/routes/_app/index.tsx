@@ -11,7 +11,7 @@ interface SectionProps {
 	title: string;
 	entries: Array<WatchlistRecord>;
 	emptyLabel: string;
-	/** Les masterclass sont mises en avant, donc affichées plus grandes. */
+	/** Masterclass entries are highlighted, so they are displayed larger. */
 	wide?: boolean;
 }
 

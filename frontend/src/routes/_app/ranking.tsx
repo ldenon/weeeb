@@ -43,8 +43,8 @@ function RouteComponent() {
 		[pair, submitMatch],
 	);
 
-	// Arbitrer une longue série à la souris est pénible : les flèches choisissent
-	// un vainqueur, la barre d'espace déclare le match nul.
+	// Settling a long run with the mouse is tedious: the arrow keys pick a winner
+	// and the space bar calls a draw.
 	useEffect(() => {
 		if (tab !== "duel") return;
 
@@ -240,10 +240,10 @@ function Contender({
 			disabled={disabled}
 			className="group flex flex-col text-left cursor-pointer disabled:opacity-50 disabled:cursor-wait"
 		>
-			{/* Hauteur bornée plutôt qu'un simple ratio : les deux affiches, leurs
-			    titres et le bouton "Match nul" doivent tenir dans l'écran, sinon
-			    on scrolle entre chaque vote. Le fond clair sert de repli quand
-			    l'image distante ne charge pas. */}
+			{/* A bounded height rather than a plain ratio: both posters, their titles
+			    and the draw button have to fit on screen, otherwise you scroll
+			    between every vote. The light background is the fallback for when
+			    the remote image fails to load. */}
 			<div
 				className="rounded-lg w-full h-[min(46vh,380px)] bg-bg-light bg-cover bg-center border-2 border-transparent group-hover:border-secondary duration-300 group-hover:scale-105"
 				style={{ backgroundImage: `url(${entry.img})` }}

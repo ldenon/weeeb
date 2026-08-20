@@ -23,14 +23,14 @@ type matchRow struct {
 	Outcome string `db:"outcome"`
 }
 
-// Passe du score à pas fixe (+1 / -1) au calcul Elo.
+// Moves from the fixed-step score (+1 / -1) to the Elo calculation.
 //
-// Le champ `elo` devient flottant : une correction Elo tombe rarement sur un
-// entier, et arrondir à chaque duel ferait dériver le total. La borne à zéro
-// disparaît, elle casserait la somme nulle du système.
+// The `elo` field becomes a float: an Elo correction rarely lands on a whole
+// number, and rounding after every duel would make the total drift. The floor at
+// zero goes away, as it would break the zero-sum property of the system.
 //
-// Les notes sont ensuite recalculées en rejouant tout l'historique des duels
-// avec la nouvelle formule : personne ne perd le travail de classement déjà fait.
+// Ratings are then recomputed by replaying the entire duel history through the new
+// formula: nobody loses the ranking work already done.
 func init() {
 	m.Register(func(app core.App) error {
 		watchlists, err := app.FindCollectionByNameOrId("watchlists")
@@ -79,8 +79,8 @@ func init() {
 	})
 }
 
-// replayMatches remet toutes les notes à leur valeur de départ puis rejoue
-// l'historique des duels dans l'ordre chronologique.
+// replayMatches resets every rating to its starting value, then replays the duel
+// history in chronological order.
 func replayMatches(app core.App) error {
 	var entries []watchlistRow
 	if err := app.DB().
@@ -115,7 +115,7 @@ func replayMatches(app core.App) error {
 		ratingA, okA := ratings[keyA]
 		ratingB, okB := ratings[keyB]
 		if !okA || !okB {
-			// L'anime a été retiré de la liste depuis : le duel n'a plus de sens.
+			// The anime has been removed from the list since: the duel is moot.
 			continue
 		}
 

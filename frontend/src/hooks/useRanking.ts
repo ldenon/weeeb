@@ -3,7 +3,7 @@ import { apiFetch } from "@/lib/api";
 import { pb } from "@/lib/pocketbase";
 import type { RankingResponse } from "@/types";
 
-/** Le classement Elo de la watchlist de l'utilisateur connecté. */
+/** The Elo ranking of the logged-in user's watchlist. */
 const useRanking = () => {
 	const userId = pb.authStore.record?.id;
 

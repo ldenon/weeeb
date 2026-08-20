@@ -4,8 +4,8 @@ import { pb } from "@/lib/pocketbase";
 import type { MatchResponse } from "@/types";
 
 /**
- * Le prochain duel à arbitrer. L'appariement est calculé côté serveur pour
- * répartir les duels équitablement entre tous les animes de la liste.
+ * The next duel to settle. The matchmaking is computed server-side so that duels
+ * are spread evenly across every anime in the list.
  */
 const useNextMatch = () => {
 	const userId = pb.authStore.record?.id;
@@ -13,7 +13,7 @@ const useNextMatch = () => {
 	return useQuery({
 		queryKey: ["ranking", userId, "match"],
 		enabled: Boolean(userId),
-		// Un duel est consommé dès qu'il est affiché : ne jamais le resservir depuis le cache.
+		// A duel is consumed as soon as it is shown: never serve it again from cache.
 		staleTime: 0,
 		gcTime: 0,
 		queryFn: () => apiFetch<MatchResponse>("/api/weeeb/ranking/match"),

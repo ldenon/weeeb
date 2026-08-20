@@ -10,8 +10,8 @@ interface MatchResult {
 }
 
 /**
- * Enregistre le résultat d'un duel. Le serveur renvoie directement le duel
- * suivant, qu'on injecte dans le cache pour enchaîner sans aller-retour.
+ * Records the result of a duel. The server returns the next duel straight away,
+ * which we push into the cache so the user can carry on without a round trip.
  */
 const useSubmitMatch = () => {
 	const queryClient = useQueryClient();

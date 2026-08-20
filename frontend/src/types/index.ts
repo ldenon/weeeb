@@ -26,9 +26,9 @@ export interface WatchlistRecord extends RecordModel {
 	user: string;
 	status: WatchlistStatus;
 	isMasterclass: boolean;
-	/** Note Elo brute. Pilotée par /api/weeeb/ranking, en lecture seule côté client. */
+	/** Raw Elo rating. Driven by /api/weeeb/ranking, read-only on the client. */
 	elo: number;
-	/** Piloté par /api/weeeb/ranking, en lecture seule côté client. */
+	/** Driven by /api/weeeb/ranking, read-only on the client. */
 	matchCount: number;
 	expand?: {
 		anime?: AnimeRecord;
@@ -46,14 +46,14 @@ export interface CommentRecord extends RecordModel {
 	};
 }
 
-/** Un anime de la watchlist tel que renvoyé par /api/weeeb/ranking. */
+/** A watchlist anime as returned by /api/weeeb/ranking. */
 export interface EloEntry {
 	watchlistId: string;
 	animeId: string;
 	name: string;
 	img: string;
 	status: WatchlistStatus;
-	/** Note Elo, déjà arrondie à l'entier par le serveur. */
+	/** Elo rating, already rounded to an integer by the server. */
 	elo: number;
 	matchCount: number;
 }
@@ -82,7 +82,7 @@ export interface RankingResponse {
 }
 
 export interface MatchResponse {
-	/** null quand la watchlist compte moins de deux animes. */
+	/** null when the watchlist holds fewer than two animes. */
 	pair: MatchPair | null;
 	progress: RankingProgress;
 }

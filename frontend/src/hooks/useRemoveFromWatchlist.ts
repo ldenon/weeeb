@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { pb } from "@/lib/pocketbase";
 import type { WatchlistRecord } from "@/types";
 
-/** Retire un anime de la watchlist de l'utilisateur. */
+/** Removes an anime from the user's watchlist. */
 const useRemoveFromWatchlist = (animeId: string) => {
 	const queryClient = useQueryClient();
 	const userId = pb.authStore.record?.id;

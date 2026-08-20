@@ -8,7 +8,7 @@ export default function AnimeSearchBar() {
 	const [input, setInput] = useState("");
 	const [query, setQuery] = useState("");
 
-	// La saisie déclenchait une requête par frappe.
+	// Typing used to fire one request per keystroke.
 	useEffect(() => {
 		const timeout = setTimeout(() => setQuery(input.trim()), 300);
 		return () => clearTimeout(timeout);

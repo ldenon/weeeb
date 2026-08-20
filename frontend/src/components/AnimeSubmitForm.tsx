@@ -150,8 +150,8 @@ export default function AnimeSubmitForm() {
 				)}
 			</form.Field>
 
-			{/* L'index unique sur `name` rejette les doublons : l'erreur était
-			    seulement loguée en console, l'utilisateur ne voyait rien. */}
+			{/* The unique index on `name` rejects duplicates: the error used to be
+			    logged to the console only, so the user saw nothing. */}
 			{createAnime.isError && (
 				<p className="text-danger text-sm">
 					L'anime n'a pas pu être ajouté. Il existe peut-être déjà.

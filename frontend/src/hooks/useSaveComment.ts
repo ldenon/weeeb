@@ -3,12 +3,12 @@ import { pb } from "@/lib/pocketbase";
 import type { CommentRecord } from "@/types";
 
 /**
- * Enregistre l'avis de l'utilisateur sur un anime, en création ou en mise à jour.
+ * Saves the user's review of an anime, creating or updating it.
  *
- * L'avis existant est relu au moment de l'écriture plutôt que lu depuis le cache :
- * le formulaire enregistre en continu et le cache a un cycle de retard, ce qui
- * provoquait une seconde création rejetée par l'index unique (author, anime).
- * `scope` sérialise les appels concurrents pour la même raison.
+ * The existing review is re-read at write time rather than taken from the cache:
+ * the form saves continuously and the cache runs one cycle behind, which caused a
+ * second creation that the unique (author, anime) index rejected. `scope`
+ * serialises concurrent calls for the same reason.
  */
 const useSaveComment = (animeId: string) => {
 	const queryClient = useQueryClient();
@@ -33,7 +33,7 @@ const useSaveComment = (animeId: string) => {
 					.update<CommentRecord>(existing.id, { content });
 			}
 
-			// `author` est imposé côté serveur par le hook OnRecordCreateRequest.
+			// `author` is imposed server-side by the OnRecordCreateRequest hook.
 			return pb
 				.collection("comments")
 				.create<CommentRecord>({ anime: animeId, content });

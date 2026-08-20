@@ -1,9 +1,8 @@
-// Package hooks regroupe les garde-fous appliqués aux collections.
+// Package hooks gathers the guard rails applied to the collections.
 //
-// Les règles d'API de PocketBase contrôlent QUI peut écrire, pas CE QUI est
-// écrit : avant ces hooks, n'importe quel utilisateur connecté pouvait créer une
-// entrée de watchlist ou un commentaire au nom de quelqu'un d'autre, ou se
-// fabriquer un score Elo. Tout passe désormais par le serveur.
+// PocketBase's API rules control WHO may write, not WHAT is written: before these
+// hooks, any logged-in user could create a watchlist entry or a comment in someone
+// else's name, or make up an Elo rating. It all goes through the server now.
 package hooks
 
 import (
@@ -15,7 +14,7 @@ import (
 	"backend/internal/elo"
 )
 
-// Register branche l'ensemble des hooks de collection.
+// Register wires up every collection hook.
 func Register(app core.App) {
 	registerWatchlistHooks(app)
 	registerCommentHooks(app)
@@ -23,7 +22,7 @@ func Register(app core.App) {
 }
 
 func registerWatchlistHooks(app core.App) {
-	// À la création, le propriétaire et les compteurs sont imposés par le serveur.
+	// On creation, the owner and the counters are imposed by the server.
 	app.OnRecordCreateRequest("watchlists").BindFunc(func(e *core.RecordRequestEvent) error {
 		if e.Auth == nil {
 			return router.NewUnauthorizedError("Connexion requise.", nil)
@@ -36,8 +35,8 @@ func registerWatchlistHooks(app core.App) {
 		return e.Next()
 	})
 
-	// À la mise à jour, seul `status` et `isMasterclass` sont libres : le score
-	// ne bouge que via /api/weeeb/ranking.
+	// On update, only `status` and `isMasterclass` are free: the rating moves
+	// solely through /api/weeeb/ranking.
 	app.OnRecordUpdateRequest("watchlists").BindFunc(func(e *core.RecordRequestEvent) error {
 		original := e.Record.Original()
 
@@ -61,7 +60,7 @@ func registerCommentHooks(app core.App) {
 		return e.Next()
 	})
 
-	// On ne réattribue pas un avis existant à un autre auteur ou à un autre anime.
+	// An existing review is never reassigned to another author or another anime.
 	app.OnRecordUpdateRequest("comments").BindFunc(func(e *core.RecordRequestEvent) error {
 		original := e.Record.Original()
 
@@ -73,8 +72,8 @@ func registerCommentHooks(app core.App) {
 }
 
 func registerAnimeHooks(app core.App) {
-	// L'index unique sur `name` est sensible aux espaces parasites :
-	// "Grand Blue " et "Grand Blue" passeraient tous les deux.
+	// The unique index on `name` is sensitive to stray whitespace:
+	// "Grand Blue " and "Grand Blue" would both get through.
 	app.OnRecordCreateRequest("animes").BindFunc(func(e *core.RecordRequestEvent) error {
 		e.Record.Set("name", strings.TrimSpace(e.Record.GetString("name")))
 		e.Record.Set("synopsis", strings.TrimSpace(e.Record.GetString("synopsis")))

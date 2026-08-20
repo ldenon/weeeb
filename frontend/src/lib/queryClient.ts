@@ -4,10 +4,10 @@ function createQueryClient() {
 	return new QueryClient({
 		defaultOptions: {
 			queries: {
-				// Rigueur : on évite de refetcher les données trop souvent
-				// si l'utilisateur change juste de tab
+				// Avoid refetching the data too often when the user merely
+				// switches tabs
 				staleTime: 1000 * 60 * 5,
-				// Important pour le SSR : ne pas retenter les requêtes échouées sur le serveur
+				// Important for SSR: do not retry failed requests on the server
 				retry: false,
 			},
 		},
@@ -17,11 +17,10 @@ function createQueryClient() {
 let browserQueryClient: QueryClient | undefined;
 
 /**
- * Un cache par requête côté serveur, un cache partagé côté navigateur.
+ * One cache per request on the server, a shared cache in the browser.
  *
- * Un singleton de module serait partagé entre toutes les requêtes SSR, donc
- * entre tous les utilisateurs : les données d'une watchlist pourraient être
- * servies à quelqu'un d'autre.
+ * A module-level singleton would be shared across every SSR request, and so
+ * across every user: one person's watchlist could be served to somebody else.
  */
 export function getQueryClient() {
 	if (typeof window === "undefined") {

@@ -1,50 +1,50 @@
-// Package elo implémente le classement par duels des animes d'une watchlist,
-// avec le système de notation Elo.
+// Package elo ranks the animes of a watchlist through head-to-head duels,
+// using the Elo rating system.
 //
-// Chaque entrée de watchlist démarre à DefaultRating. Un duel oppose deux animes
-// de la liste d'un même utilisateur : le score attendu de chacun est déduit de
-// l'écart entre leurs notes, puis chaque note est corrigée de l'écart entre le
-// résultat réel et ce score attendu. Battre un anime mieux noté rapporte donc
-// beaucoup, battre un anime moins bien noté rapporte peu.
+// Every watchlist entry starts at DefaultRating. A duel pits two animes from the
+// same user's list against each other: the expected score of each side is derived
+// from the gap between their ratings, then each rating is corrected by the gap
+// between the actual result and that expectation. Beating a higher-rated anime
+// therefore pays a lot, beating a lower-rated one pays very little.
 package elo
 
 import "math"
 
 const (
-	// DefaultRating est la note attribuée à un anime lors de son ajout à la watchlist.
+	// DefaultRating is the rating given to an anime when it is added to the watchlist.
 	//
-	// La valeur exacte n'a aucune influence sur le classement : seuls les écarts
-	// entre notes comptent, tout décaler de +900 ne change rien à l'ordre. 1000 est
-	// la convention usuelle et laisse assez de marge pour qu'un anime battu en
-	// boucle ne descende pas sous zéro, ce qui afficherait des points négatifs.
+	// The exact value has no bearing on the ranking: only the gaps between ratings
+	// matter, and shifting everyone by +900 leaves the order untouched. 1000 is the
+	// usual convention and leaves enough headroom that an anime losing over and over
+	// does not fall below zero, which would display negative points.
 	DefaultRating = 1000.0
 
-	// KFactor est l'amplitude maximale d'une correction de note après un duel.
-	// Plus il est élevé, plus le classement se stabilise vite mais réagit
-	// brutalement à un résultat isolé. 32 est la valeur de référence.
+	// KFactor is the largest rating correction a single duel can produce.
+	// The higher it is, the faster the ranking settles, but the more violently it
+	// reacts to an isolated result. 32 is the reference value.
 	KFactor = 32.0
 
-	// ScaleFactor fixe l'échelle des écarts : un anime noté ScaleFactor points
-	// au-dessus d'un autre est attendu vainqueur dans ~91% des duels.
+	// ScaleFactor sets the scale of the gaps: an anime rated ScaleFactor points
+	// above another is expected to win about 91% of their duels.
 	ScaleFactor = 400.0
 )
 
-// Outcome est le résultat d'un duel, du point de vue de l'anime A.
+// Outcome is the result of a duel, from anime A's point of view.
 type Outcome string
 
 const (
-	OutcomeA    Outcome = "a"    // A gagne
-	OutcomeB    Outcome = "b"    // B gagne
-	OutcomeDraw Outcome = "draw" // match nul
+	OutcomeA    Outcome = "a"    // A wins
+	OutcomeB    Outcome = "b"    // B wins
+	OutcomeDraw Outcome = "draw" // draw
 )
 
-// IsValid indique si o est un résultat reconnu.
+// IsValid reports whether o is a recognised result.
 func (o Outcome) IsValid() bool {
 	return o == OutcomeA || o == OutcomeB || o == OutcomeDraw
 }
 
-// Score retourne le résultat du duel pour l'anime A, dans la convention Elo :
-// 1 pour une victoire, 0,5 pour un match nul, 0 pour une défaite.
+// Score returns the duel result for anime A in the Elo convention:
+// 1 for a win, 0.5 for a draw, 0 for a loss.
 func (o Outcome) Score() float64 {
 	switch o {
 	case OutcomeA:
@@ -56,18 +56,18 @@ func (o Outcome) Score() float64 {
 	}
 }
 
-// ExpectedScore retourne le score attendu de A face à B, entre 0 et 1.
+// ExpectedScore returns A's expected score against B, between 0 and 1.
 //
-// À notes égales il vaut 0,5. L'écart de notes est ramené à l'échelle
-// ScaleFactor par une courbe logistique.
+// At equal ratings it is 0.5. The rating gap is mapped onto the ScaleFactor
+// scale through a logistic curve.
 func ExpectedScore(ratingA, ratingB float64) float64 {
 	return 1 / (1 + math.Pow(10, (ratingB-ratingA)/ScaleFactor))
 }
 
-// NewRatings retourne les notes de A et de B après un duel.
+// NewRatings returns the ratings of A and B after a duel.
 //
-// Le système est à somme nulle : ce que l'un gagne, l'autre le perd exactement,
-// puisque les scores comme les scores attendus des deux camps somment à 1.
+// The system is zero-sum: whatever one side gains, the other loses exactly,
+// because both the scores and the expected scores of the two sides sum to 1.
 func NewRatings(ratingA, ratingB float64, outcome Outcome) (float64, float64) {
 	expectedA := ExpectedScore(ratingA, ratingB)
 	scoreA := outcome.Score()
@@ -77,8 +77,8 @@ func NewRatings(ratingA, ratingB float64, outcome Outcome) (float64, float64) {
 	return ratingA + delta, ratingB - delta
 }
 
-// PairKey construit l'identifiant stable d'un duel, indépendant de l'ordre
-// d'affichage des deux animes.
+// PairKey builds the stable identifier of a duel, independent of the order in
+// which the two animes are displayed.
 func PairKey(animeA, animeB string) string {
 	if animeA > animeB {
 		animeA, animeB = animeB, animeA

@@ -13,6 +13,6 @@ export const statusTranslations = {
 	},
 };
 
-/** Accorde un mot en fonction du nombre, ex : plural(1, "duel") -> "duel". */
+/** Pluralises a word according to a count, e.g. plural(1, "duel") -> "duel". */
 export const plural = (count: number, singular: string, suffix = "s") =>
 	count > 1 ? `${singular}${suffix}` : singular;

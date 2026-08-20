@@ -3,7 +3,7 @@ import { apiFetch } from "@/lib/api";
 import { pb } from "@/lib/pocketbase";
 import type { RankingResponse } from "@/types";
 
-/** Remet tous les scores à leur valeur de départ et efface l'historique des duels. */
+/** Resets every rating to its starting value and wipes the duel history. */
 const useResetRanking = () => {
 	const queryClient = useQueryClient();
 	const userId = pb.authStore.record?.id;

@@ -1,14 +1,14 @@
 import { pb } from "./pocketbase";
 
-// VITE_PB_URL peut se terminer par un "/" : sans normalisation on construit
-// des URLs en "//api/..." que le navigateur refuse de suivre.
+// VITE_PB_URL may end with a "/": without normalising it we build "//api/..."
+// URLs that the browser refuses to follow.
 const BASE_URL = String(import.meta.env.VITE_PB_URL ?? "").replace(/\/+$/, "");
 
 /**
- * Appelle les routes Go personnalisées de PocketBase (/api/weeeb/...).
+ * Calls PocketBase's custom Go routes (/api/weeeb/...).
  *
- * Le SDK PocketBase ne sait interroger que les collections ; les endpoints
- * ajoutés par les hooks passent donc par fetch, avec le même jeton d'auth.
+ * The PocketBase SDK only knows how to query collections, so the endpoints added
+ * by the hooks go through fetch, carrying the same auth token.
  */
 export async function apiFetch<T>(
 	path: string,

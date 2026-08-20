@@ -5,18 +5,18 @@ import (
 	"sort"
 )
 
-// candidateWindow est le nombre d'adversaires équivalents parmi lesquels on
-// tire au sort. Au-delà de 1 on évite de reproposer toujours le même duel ;
-// la fenêtre reste volontairement étroite pour ne pas casser l'équilibrage.
+// candidateWindow is how many equivalent opponents we draw at random from.
+// Above 1 it avoids proposing the same duel over and over; the window stays
+// deliberately narrow so as not to break the balancing.
 const candidateWindow = 4
 
-// Pair est un duel proposé à l'utilisateur.
+// Pair is a duel proposed to the user.
 type Pair struct {
 	A Entry `json:"a"`
 	B Entry `json:"b"`
 }
 
-// Progress décrit l'avancement du classement.
+// Progress describes how far along the ranking is.
 type Progress struct {
 	TotalMatches  int `json:"totalMatches"`
 	PlayedPairs   int `json:"playedPairs"`
@@ -26,24 +26,24 @@ type Progress struct {
 	MaxMatchCount int `json:"maxMatchCount"`
 }
 
-// NextPair choisit le prochain duel de façon équilibrée.
+// NextPair picks the next duel in a balanced way.
 //
-// L'équilibrage repose sur deux règles :
+// The balancing rests on two rules:
 //
-//  1. le premier anime est toujours tiré parmi ceux qui ont le MOINS de duels
-//     joués — un anime ne peut donc pas prendre de l'avance sur les autres ;
-//  2. l'adversaire est choisi parmi ceux dont le duel n'a jamais été joué, puis
-//     parmi les moins sollicités, puis parmi les scores les plus proches (un
-//     duel serré est plus informatif qu'un duel joué d'avance).
+//  1. the first anime is always drawn among those with the FEWEST duels played,
+//     so no anime can pull ahead of the others;
+//  2. the opponent is chosen among those whose duel has never been played, then
+//     among the least used, then among the closest ratings (a tight duel is more
+//     informative than a foregone conclusion).
 //
-// Conséquence : l'écart entre l'anime le plus vu et le moins vu reste borné,
-// et tous les duels distincts sont épuisés avant qu'un seul ne soit rejoué.
+// As a result, the gap between the most and least seen anime stays bounded, and
+// every distinct duel is exhausted before a single one is replayed.
 func NextPair(entries []Entry, played map[string]int, rnd *rand.Rand) (Pair, bool) {
 	if len(entries) < 2 {
 		return Pair{}, false
 	}
 
-	// 1. Ancre : un anime au minimum de duels joués.
+	// 1. Anchor: an anime with the fewest duels played.
 	minCount := entries[0].MatchCount
 	for _, e := range entries {
 		if e.MatchCount < minCount {
@@ -59,7 +59,7 @@ func NextPair(entries []Entry, played map[string]int, rnd *rand.Rand) (Pair, boo
 	}
 	anchor := anchors[rnd.Intn(len(anchors))]
 
-	// 2. Classement des adversaires possibles.
+	// 2. Rank the possible opponents.
 	type candidate struct {
 		entry   Entry
 		replays int
@@ -80,8 +80,8 @@ func NextPair(entries []Entry, played map[string]int, rnd *rand.Rand) (Pair, boo
 		})
 	}
 
-	// Ne devrait pas arriver : l'index unique (user, anime) garantit des animes
-	// distincts. Garde-fou pour ne pas transformer une donnée douteuse en panic.
+	// Should not happen: the unique (user, anime) index guarantees distinct animes.
+	// Guard rail so that questionable data does not turn into a panic.
 	if len(candidates) == 0 {
 		return Pair{}, false
 	}
@@ -96,9 +96,9 @@ func NextPair(entries []Entry, played map[string]int, rnd *rand.Rand) (Pair, boo
 		return candidates[i].eloDist < candidates[j].eloDist
 	})
 
-	// 3. Tirage au sort dans le meilleur palier uniquement : on ne pioche que
-	//    parmi les adversaires strictement équivalents en (duels rejoués, duels
-	//    joués), sinon l'aléatoire dégraderait l'équilibrage.
+	// 3. Draw at random within the best tier only: we pick solely among opponents
+	//    strictly equivalent in (duels replayed, duels played), otherwise the
+	//    randomness would degrade the balancing.
 	best := candidates[0]
 	tier := 0
 	for tier < len(candidates) &&
@@ -112,14 +112,14 @@ func NextPair(entries []Entry, played map[string]int, rnd *rand.Rand) (Pair, boo
 
 	opponent := candidates[rnd.Intn(tier)].entry
 
-	// L'ancre n'est pas systématiquement affichée à gauche.
+	// The anchor is not always the one displayed on the left.
 	if rnd.Intn(2) == 0 {
 		return Pair{A: anchor, B: opponent}, true
 	}
 	return Pair{A: opponent, B: anchor}, true
 }
 
-// BuildProgress résume l'état du classement pour l'affichage.
+// BuildProgress summarises the state of the ranking for display.
 func BuildProgress(entries []Entry, played map[string]int, totalMatches int) Progress {
 	n := len(entries)
 
@@ -148,8 +148,8 @@ func BuildProgress(entries []Entry, played map[string]int, totalMatches int) Pro
 	return p
 }
 
-// Rank trie les entrées par score décroissant, puis par nombre de duels et par nom
-// pour garantir un ordre stable.
+// Rank sorts the entries by descending rating, then by duel count and name to
+// guarantee a stable order.
 func Rank(entries []Entry) []Entry {
 	ranked := make([]Entry, len(entries))
 	copy(ranked, entries)

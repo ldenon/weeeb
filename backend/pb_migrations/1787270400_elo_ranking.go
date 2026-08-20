@@ -8,10 +8,10 @@ import (
 	m "github.com/pocketbase/pocketbase/migrations"
 )
 
-// Note de départ en vigueur à la date de cette migration. Valeur figée
-// volontairement : une migration décrit un état passé, elle ne doit pas suivre
-// une constante du code dont la signification peut changer (c'est le cas ici,
-// le système est passé au calcul Elo dans une migration ultérieure).
+// Starting rating in force at the date of this migration. The value is frozen
+// deliberately: a migration describes a past state, so it must not follow a code
+// constant whose meaning can change (which is what happened here, the system moved
+// to the Elo calculation in a later migration).
 const initialElo = 100
 
 // Collection ids frozen by the initial snapshot migration.
@@ -20,11 +20,11 @@ const (
 	usersCollectionId  = "_pb_users_auth_"
 )
 
-// Ajoute le système de classement Elo :
+// Adds the Elo ranking system:
 //   - watchlists.elo / watchlists.matchCount
-//   - index unique (user, anime) sur watchlists
-//   - suppression possible de sa propre entrée de watchlist
-//   - collection elo_matches (historique des duels)
+//   - unique (user, anime) index on watchlists
+//   - the ability to delete one's own watchlist entry
+//   - the elo_matches collection (duel history)
 func init() {
 	m.Register(func(app core.App) error {
 		watchlists, err := app.FindCollectionByNameOrId("watchlists")
@@ -48,18 +48,18 @@ func init() {
 			},
 		)
 
-		// Un anime ne peut apparaître qu'une fois dans la liste d'un utilisateur.
-		// Sans cette contrainte le classement compterait plusieurs fois le même titre.
+		// An anime may appear only once in a given user's list. Without this
+		// constraint the ranking would count the same title several times.
 		watchlists.AddIndex("idx_watchlists_user_anime", true, "user, anime", "")
 
-		// On pouvait ajouter un anime à sa liste mais jamais l'en retirer.
+		// It was possible to add an anime to your list but never to remove it.
 		watchlists.DeleteRule = ptr(`@request.auth.id = user.id`)
 
 		if err := app.Save(watchlists); err != nil {
 			return err
 		}
 
-		// Backfill des entrées existantes.
+		// Backfill the existing entries.
 		if _, err := app.DB().NewQuery(
 			"UPDATE watchlists SET elo = {:elo}, matchCount = 0 WHERE elo IS NULL OR elo = 0",
 		).Bind(dbx.Params{"elo": initialElo}).Execute(); err != nil {
@@ -107,8 +107,8 @@ func init() {
 		matches.AddIndex("idx_elo_matches_user_pair", false, "user, pairKey", "")
 		matches.AddIndex("idx_elo_matches_user_created", false, "user, created", "")
 
-		// Aucune règle d'API : la collection n'est accessible que par les
-		// hooks Go (/api/weeeb/ranking). Le client ne l'écrit jamais en direct.
+		// No API rules at all: the collection is reachable only through the Go hooks
+		// (/api/weeeb/ranking). The client never writes to it directly.
 		matches.ListRule = nil
 		matches.ViewRule = nil
 		matches.CreateRule = nil

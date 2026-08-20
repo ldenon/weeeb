@@ -12,7 +12,7 @@ import (
 	"github.com/pocketbase/pocketbase/tools/router"
 )
 
-// RankedEntry est une entrée de classement avec sa position.
+// RankedEntry is a ranking entry together with its position.
 type RankedEntry struct {
 	Entry
 	Rank int `json:"rank"`
@@ -34,10 +34,10 @@ type submitRequest struct {
 	Outcome Outcome `json:"outcome"`
 }
 
-// RegisterRoutes branche les endpoints du classement sur /api/weeeb/ranking.
+// RegisterRoutes wires the ranking endpoints onto /api/weeeb/ranking.
 //
-// Toute la collection elo_matches et les champs elo/matchCount sont verrouillés
-// côté API rules : ces routes sont le seul moyen de les faire évoluer.
+// The whole elo_matches collection and the elo/matchCount fields are locked down
+// by the API rules: these routes are the only way to make them move.
 func RegisterRoutes(e *core.ServeEvent) {
 	g := e.Router.Group("/api/weeeb/ranking")
 	g.Bind(apis.RequireAuth("users"))
@@ -80,7 +80,7 @@ func handleNextMatch(e *core.RequestEvent) error {
 
 	pair, ok := NextPair(entries, played, newRand())
 	if !ok {
-		// Moins de deux animes en watchlist : rien à départager, ce n'est pas une erreur.
+		// Fewer than two animes in the watchlist: nothing to settle, and not an error.
 		return e.JSON(http.StatusOK, matchResponse{Pair: nil, Progress: progress})
 	}
 
@@ -151,7 +151,7 @@ func handleSubmitMatch(e *core.RequestEvent) error {
 		return router.NewInternalServerError("Impossible d'enregistrer le duel.", err)
 	}
 
-	// On renvoie directement le duel suivant : un aller-retour au lieu de deux.
+	// Return the next duel straight away: one round trip instead of two.
 	return handleNextMatch(e)
 }
 
@@ -178,12 +178,12 @@ func handleReset(e *core.RequestEvent) error {
 	return handleRanking(e)
 }
 
-// applyResult écrit la nouvelle note d'une entrée de watchlist et incrémente son
-// compteur de duels. SaveNoValidate contourne les règles d'API : c'est
-// volontaire, l'appelant a déjà vérifié que l'entrée appartient à l'utilisateur.
+// applyResult writes the new rating of a watchlist entry and increments its duel
+// counter. SaveNoValidate bypasses the API rules, deliberately: the caller has
+// already checked that the entry belongs to the user.
 //
-// La note n'est pas bornée : la plaquer à zéro casserait la somme nulle du
-// système, l'un des deux camps ne perdant plus ce que l'autre gagne.
+// The rating is not clamped: flooring it at zero would break the zero-sum property
+// of the system, one side no longer losing what the other gains.
 func applyResult(app core.App, entry *core.Record, rating float64) error {
 	entry.Set("elo", rating)
 	entry.Set("matchCount", entry.GetInt("matchCount")+1)
@@ -210,7 +210,7 @@ func loadState(app core.App, userId string) ([]Entry, Progress, error) {
 	return entries, BuildProgress(entries, played, total), nil
 }
 
-// withRanks numérote un classement déjà trié, ex aequo compris (1, 2, 2, 4).
+// withRanks numbers an already-sorted ranking, ties included (1, 2, 2, 4).
 func withRanks(sorted []Entry) []RankedEntry {
 	ranked := make([]RankedEntry, len(sorted))
 

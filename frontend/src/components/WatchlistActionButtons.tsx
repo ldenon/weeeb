@@ -15,7 +15,7 @@ const STATUSES: Array<WatchlistStatus> = [
 
 interface WatchlistActionButtonsProps {
 	animeId: string;
-	/** Statut actuel, ou null si l'anime n'est pas encore dans la liste. */
+	/** Current status, or null if the anime is not in the list yet. */
 	currentStatus: WatchlistStatus | null;
 }
 
@@ -29,7 +29,7 @@ export default function WatchlistActionButtons({
 	const setStatus = useSetWatchlistStatus(animeId);
 	const removeFromWatchlist = useRemoveFromWatchlist(animeId);
 
-	// Le libellé suit la donnée : plus d'état local à resynchroniser à la main.
+	// The label follows the data: no local state left to resync by hand.
 	const label = currentStatus
 		? statusTranslations[currentStatus].fr
 		: "Ajouter à ma liste";

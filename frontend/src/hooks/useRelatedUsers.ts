@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { pb } from "@/lib/pocketbase";
 import type { WatchlistRecord } from "@/types";
 
-/** Les entrées de watchlist des autres membres pour un anime donné. */
+/** The other members' watchlist entries for a given anime. */
 const useRelatedUsers = (animeId: string) =>
 	useQuery({
 		queryKey: ["relatedUsers", animeId],

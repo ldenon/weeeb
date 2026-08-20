@@ -51,8 +51,8 @@ function NotFound() {
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-	// Instancié une seule fois par rendu : côté serveur chaque requête a son
-	// propre cache, côté navigateur il est partagé entre les navigations.
+	// Instantiated once per render: on the server every request gets its own
+	// cache, in the browser it is shared across navigations.
 	const [queryClient] = useState(getQueryClient);
 
 	return (
