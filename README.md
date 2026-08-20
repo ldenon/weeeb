@@ -69,8 +69,32 @@ d'abord activer l'auto-deploy.
   le Dockerfile fait `COPY go.mod go.sum ./` et attend `backend/` comme contexte.
   Si tu tiens à le renseigner, mets `backend` — surtout pas `.`.
 
-Les données PocketBase vivent dans le volume `pb_data` — à sauvegarder, c'est le seul
-état non reconstructible du projet.
+### Persistance des données — obligatoire
+
+Le `Dockerfile` déclare `VOLUME /pb/pb_data`, mais **cela ne suffit pas**. Sans
+montage explicite, Docker crée un volume *anonyme* à chaque création de conteneur :
+un redéploiement repart donc sur un volume vide, et les données précédentes restent
+abandonnées dans l'ancien volume.
+
+Le `docker-compose.yml` de ce dossier déclare bien un volume nommé, mais il n'est
+lu que par un déploiement de type *Docker Compose*. Une **Application** Dokploy est
+construite depuis le Dockerfile et l'ignore complètement.
+
+Il faut donc déclarer le montage dans l'interface, sur l'application backend :
+*Advanced → Volumes / Mounts → Volume Mount*.
+
+| Champ | Valeur |
+|---|---|
+| Volume Name | `weeeb_pb_data` |
+| Mount Path | `/pb/pb_data` |
+
+Puis **Redeploy** pour que le montage prenne effet.
+
+Un volume *nommé* est indispensable ici : les sauvegardes de volume de Dokploy ne
+fonctionnent qu'avec ceux-là, pas avec les bind mounts.
+
+`pb_data` reste le seul état non reconstructible du projet — c'est ce qu'il faut
+sauvegarder.
 
 ## Migrer les données d'une ancienne instance
 
