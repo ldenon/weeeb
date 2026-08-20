@@ -1,22 +1,35 @@
-version: "3.8"
+# Déploiement de type "Docker Compose" dans Dokploy.
+#
+# L'intérêt par rapport à une Application : le volume est déclaré ici, donc
+# versionné, au lieu de dépendre d'un réglage saisi dans l'interface. Une
+# Application est construite depuis le Dockerfile et ignore complètement ce
+# fichier — c'est ce qui faisait repartir les données de zéro à chaque déploiement.
 services:
   pocketbase:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: weeeb-backend
     restart: always
-    ports:
-      - 8090
+
+    # Pas de `container_name` : Dokploy nomme lui-même les conteneurs, et le
+    # figer casse ses journaux et ses métriques.
+
+    # Pas de `ports` non plus : Traefik atteint le service par le réseau interne,
+    # publier un port sur l'hôte n'apporte rien et peut entrer en conflit. Le
+    # port se déclare dans la configuration du domaine, côté Dokploy.
+    expose:
+      - "8090"
+
+    # Le seul état non reconstructible du projet.
     volumes:
       - pb_data:/pb/pb_data
-    environment:
-      - POCKETBASE_PORT_NUMBER=8090
+
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8090/_/"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 10s
 
 volumes:
   pb_data: {}
